@@ -1,0 +1,29 @@
+<!-- SVG Icon Template - 192x192 -->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 192 192" width="192" height="192">
+  <!-- Background -->
+  <rect width="192" height="192" rx="42" fill="url(#gradient)"/>
+  
+  <!-- Gradient Definition -->
+  <defs>
+    <linearGradient id="gradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#6366f1;stop-opacity:1" />
+      <stop offset="50%" style="stop-color:#a855f7;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#ec4899;stop-opacity:1" />
+    </linearGradient>
+  </defs>
+  
+  <!-- Icon Content - Fork and Knife -->
+  <g transform="translate(96, 96)">
+    <!-- Fork -->
+    <path d="M-30,-40 L-30,40 M-40,-40 L-40,-10 M-30,-40 L-30,-10 M-20,-40 L-20,-10" 
+          stroke="white" stroke-width="6" stroke-linecap="round" fill="none"/>
+    
+    <!-- Knife -->
+    <path d="M20,-40 L20,40 M10,-40 L30,-40 L30,-20 L20,-20" 
+          stroke="white" stroke-width="6" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+  </g>
+  
+  <!-- App Initial -->
+  <text x="96" y="160" font-family="Arial, sans-serif" font-size="32" font-weight="bold" 
+        text-anchor="middle" fill="white">H</text>
+</svg>
