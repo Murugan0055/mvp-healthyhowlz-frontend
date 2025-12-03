@@ -1,10 +1,9 @@
-import React, { useState, useEffect, useRef } from 'react';
-import { Camera, Plus, Loader2, ArrowLeft, Flame, ChevronRight, X, AlertCircle, WifiOff, RefreshCw, Image as ImageIcon, Utensils } from 'lucide-react';
+import { AlertCircle, ArrowLeft, Camera, ChevronRight, Flame, Image as ImageIcon, Loader2, Plus, RefreshCw, Utensils, WifiOff, X } from 'lucide-react';
+import { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import api from '../utils/api';
 import { Button } from '../components/ui/Button';
-import { Input } from '../components/ui/Input';
 import { useAuth } from '../context/AuthContext';
+import api from '../utils/api';
 
 const DietTracker = () => {
   const { user } = useAuth();
@@ -625,14 +624,17 @@ const DietTracker = () => {
       </div>
 
       {/* Floating Action Button */}
-      <button
-        onClick={() => setView('ADD')}
-        className="fixed bottom-24 right-6 w-16 h-16 bg-gradient-to-br from-indigo-600 to-purple-600 text-white rounded-2xl shadow-2xl shadow-indigo-500/50 flex items-center justify-center hover:scale-110 active:scale-95 transition-all z-20 group"
-        aria-label="Add meal"
-      >
-        <Plus size={32} className="group-hover:rotate-90 transition-transform" />
-      </button>
-
+      {
+        meals.length > 0 && (
+          <button
+            onClick={() => setView('ADD')}
+            className="fixed bottom-24 right-6 w-16 h-16 bg-gradient-to-br from-indigo-600 to-purple-600 text-white rounded-2xl shadow-2xl shadow-indigo-500/50 flex items-center justify-center hover:scale-110 active:scale-95 transition-all z-20 group"
+            aria-label="Add meal"
+          >
+            <Plus size={32} className="group-hover:rotate-90 transition-transform" />
+          </button>
+        )
+      }
     </div>
   );
 };
