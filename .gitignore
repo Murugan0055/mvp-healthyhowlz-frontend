@@ -1,0 +1,76 @@
+# Dependencies
+node_modules/
+jspm_packages/
+
+# Build output
+dist/
+build/
+out/
+.next/
+.nuxt/
+.svelte-kit/
+.storybook-out/
+expo-build/
+expo-dist/
+
+# Logs
+logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# Environment files
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# Cache
+.cache/
+.parcel-cache/
+.vite/
+.eslintcache
+.stylelintcache
+.next/cache/
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Editor settings
+.vscode/
+.idea/
+*.swp
+
+# Testing
+coverage/
+*.lcov
+
+# Output of `npm pack`
+*.tgz
+
+# REPL history
+.node_repl_history
+
+# Typescript build info
+*.tsbuildinfo
+
+# Local server files
+serve/
+
+# Temporary files
+temp/
+tmp/
+
+# Storybook
+storybook-static/
+
+# Expo
+.expo/
+.expo-shared/
+
+# Firebase
+.firebase/
