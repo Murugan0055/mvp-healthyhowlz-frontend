@@ -6,6 +6,7 @@ import PWAInstallPrompt from './components/PWAInstallPrompt'
 import { AuthProvider } from './context/AuthContext'
 import Dashboard from './pages/Dashboard'
 import DietTracker from './pages/DietTracker'
+import DietPlanScreen from './components/diet/DietPlanScreen'
 import ForgotPassword from './pages/ForgotPassword'
 import Login from './pages/Login'
 import MealDetailPage from './pages/MealDetailPage'
@@ -56,6 +57,7 @@ function App() {
         >
           <Route index element={<Dashboard />} />
           <Route path="diet" element={<DietTracker />} />
+          <Route path="/diet/plan" element={<DietPlanScreen />} />
           <Route path="workout" element={<WorkoutTracker />} />
           {/* Meal Detail Routes - Also Protected */}
           <Route

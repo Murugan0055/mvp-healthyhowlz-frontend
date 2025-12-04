@@ -1,10 +1,12 @@
-import axios from 'axios';
+import axios from "axios";
 
 // Create an axios instance with base configuration
 const api = axios.create({
-  baseURL: 'https://mvp-healthyhowlz-backend.onrender.com/api',
+  baseURL:
+    import.meta.env.VITE_API_BASE_URL ||
+    "https://mvp-healthyhowlz-backend.onrender.com/api",
   headers: {
-    'Content-Type': 'application/json',
+    "Content-Type": "application/json",
   },
 });
 
@@ -12,7 +14,7 @@ const api = axios.create({
 api.interceptors.request.use(
   (config) => {
     // Get token from localStorage
-    const token = localStorage.getItem('token');
+    const token = localStorage.getItem("token");
 
     if (token) {
       // Add Authorization header with Bearer token
@@ -40,19 +42,19 @@ api.interceptors.response.use(
       // Handle 401 Unauthorized errors
       if (status === 401) {
         // Token expired or invalid
-        console.error('Authentication failed:', data.error);
+        console.error("Authentication failed:", data.error);
 
         // Clear localStorage
-        localStorage.removeItem('token');
-        localStorage.removeItem('user');
+        localStorage.removeItem("token");
+        localStorage.removeItem("user");
 
         // Redirect to login page
-        window.location.href = '/login';
+        window.location.href = "/login";
       }
 
       // Handle 403 Forbidden errors
       if (status === 403) {
-        console.error('Access forbidden:', data.error);
+        console.error("Access forbidden:", data.error);
       }
     }
 
