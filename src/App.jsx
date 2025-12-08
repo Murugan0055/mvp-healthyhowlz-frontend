@@ -14,6 +14,8 @@ import MealsListPage from './pages/MealsListPage'
 import NotFound from './pages/NotFound'
 import Signup from './pages/Signup'
 import WorkoutTracker from './pages/WorkoutTracker'
+import WorkoutPlanScreen from './components/workout/WorkoutPlanScreen'
+import WorkoutListPage from './pages/WorkoutListPage'
 
 function App() {
   return (
@@ -59,6 +61,8 @@ function App() {
           <Route path="diet" element={<DietTracker />} />
           <Route path="/diet/plan" element={<DietPlanScreen />} />
           <Route path="workout" element={<WorkoutTracker />} />
+          <Route path="/workout/plan" element={<WorkoutPlanScreen />} />
+          <Route path="/workout/all" element={<WorkoutListPage />} />
           {/* Meal Detail Routes - Also Protected */}
           <Route
             path="/diet/meals/:id"
@@ -77,7 +81,7 @@ function App() {
               </ProtectedRoute>
             }
           />
-        </Route>
+        </Route >
 
 
         {/* Fallback Routes */}
@@ -87,8 +91,8 @@ function App() {
 
         {/* 404 Not Found - Must be last */}
         <Route path="*" element={<NotFound />} />
-      </Routes>
-    </AuthProvider>
+      </Routes >
+    </AuthProvider >
   )
 }
 
