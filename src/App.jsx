@@ -16,6 +16,9 @@ import Signup from './pages/Signup'
 import WorkoutTracker from './pages/WorkoutTracker'
 import WorkoutPlanScreen from './components/workout/WorkoutPlanScreen'
 import WorkoutListPage from './pages/WorkoutListPage'
+import Profile from './pages/Profile'
+import BodyMetrics from './pages/BodyMetrics'
+import BodyMeasurements from './pages/BodyMeasurements'
 
 function App() {
   return (
@@ -81,6 +84,11 @@ function App() {
               </ProtectedRoute>
             }
           />
+
+          {/* Profile Routes */}
+          <Route path="profile" element={<Profile />} />
+          <Route path="profile/body-metrics" element={<BodyMetrics />} />
+          <Route path="profile/body-measurements" element={<BodyMeasurements />} />
         </Route >
 
 

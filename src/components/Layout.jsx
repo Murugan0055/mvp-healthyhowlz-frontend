@@ -1,12 +1,9 @@
-import React from 'react';
-import { Outlet, Link, useLocation } from 'react-router-dom';
-import { Home, Utensils, Dumbbell, LogOut, User } from 'lucide-react';
 import clsx from 'clsx';
-import { useAuth } from '../context/AuthContext';
+import { Dumbbell, Home, User, Utensils } from 'lucide-react';
+import { Link, Outlet, useLocation } from 'react-router-dom';
 
 const Layout = () => {
   const location = useLocation();
-  const { logout } = useAuth();
 
   const navItems = [
     { path: '/', icon: Home, label: 'Home' },
@@ -19,9 +16,6 @@ const Layout = () => {
     <div className="min-h-screen flex flex-col bg-gray-50">
       <header className="bg-white shadow-sm p-4 flex justify-between items-center sticky top-0 z-10">
         <h1 className="text-xl font-bold text-primary">Healthyhowlz</h1>
-        <button className="text-gray-500 hover:text-red-500" onClick={logout}>
-          <LogOut size={20} />
-        </button>
       </header>
 
       <main className="flex-1 p-4 pb-20">
