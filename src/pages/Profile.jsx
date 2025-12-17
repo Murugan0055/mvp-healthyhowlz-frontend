@@ -95,16 +95,8 @@ const Profile = () => {
     return (latestMetrics.weight_kg / (heightM * heightM)).toFixed(1);
   };
 
-  if (loading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50">
-        <Loader2 size={48} className="animate-spin text-primary" />
-      </div>
-    );
-  }
-
   return (
-    <div className="min-h-screen bg-gradient-to-b from-gray-50 to-white pb-32">
+    <div className="min-h-screen bg-gradient-to-b from-gray-50 to-white pb-20">
       {/* Header with Gradient */}
       <div className="bg-gradient-to-br from-indigo-600 via-purple-600 to-pink-500 px-6 pt-8 pb-12 rounded-b-[2rem] shadow-xl relative">
         <div className="flex justify-between items-center mb-6">
@@ -141,7 +133,7 @@ const Profile = () => {
               </label>
             )}
           </div>
-          <h2 className="text-2xl font-bold text-white mt-4">{formData.name || 'Your Name'}</h2>
+          <h2 className="text-2xl font-bold text-white mt-4">{formData.name || 'User Name'}</h2>
           <p className="text-indigo-100 text-sm">{formData.email}</p>
         </div>
       </div>
@@ -161,7 +153,17 @@ const Profile = () => {
         <div className="bg-white rounded-2xl shadow-lg p-5 border border-gray-100 mt-20">
           <h3 className="font-bold text-gray-900 mb-4">Personal Details</h3>
 
-          {editMode ? (
+          {loading ? (
+            // Skeleton Loading
+            <div className="space-y-3 animate-pulse">
+              {Array.from({ length: 6 }).map((_, idx) => (
+                <div key={idx} className="flex justify-between py-2 border-b border-gray-100">
+                  <div className="h-4 bg-gray-200 rounded w-1/4" />
+                  <div className="h-4 bg-gray-200 rounded w-1/3" />
+                </div>
+              ))}
+            </div>
+          ) : editMode ? (
             <div className="space-y-4">
               <div>
                 <label className="block text-xs font-bold text-gray-600 uppercase tracking-wider mb-2">
@@ -336,50 +338,69 @@ const Profile = () => {
             <h3 className="font-bold text-gray-900">Body Tracking</h3>
           </div>
 
-          <div className="space-y-3">
-            <button
-              onClick={() => navigate('/profile/body-metrics')}
-              className="w-full flex items-center justify-between p-4 bg-gradient-to-br from-blue-50 to-indigo-50 rounded-xl hover:shadow-md transition-all active:scale-[0.98]"
-            >
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 bg-blue-500 rounded-full flex items-center justify-center">
-                  <TrendingUp size={20} className="text-white" />
+          {loading ? (
+            // Skeleton Loading
+            <div className="space-y-3 animate-pulse">
+              {Array.from({ length: 2 }).map((_, idx) => (
+                <div key={idx} className="flex items-center justify-between p-4 bg-gray-100 rounded-xl">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 bg-gray-200 rounded-full" />
+                    <div className="space-y-2">
+                      <div className="h-4 bg-gray-200 rounded w-24" />
+                      <div className="h-3 bg-gray-200 rounded w-32" />
+                    </div>
+                  </div>
+                  <div className="w-5 h-5 bg-gray-200 rounded" />
                 </div>
-                <div className="text-left">
-                  <p className="font-semibold text-gray-900">Body Metrics</p>
-                  <p className="text-xs text-gray-600">Weight, Height, BMI, Body Fat</p>
+              ))}
+            </div>
+          ) : (
+            <div className="space-y-3">
+              <button
+                onClick={() => navigate('/profile/body-metrics')}
+                className="w-full flex items-center justify-between p-4 bg-gradient-to-br from-blue-50 to-indigo-50 rounded-xl hover:shadow-md transition-all active:scale-[0.98]"
+              >
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 bg-blue-500 rounded-full flex items-center justify-center">
+                    <TrendingUp size={20} className="text-white" />
+                  </div>
+                  <div className="text-left">
+                    <p className="font-semibold text-gray-900">Body Metrics</p>
+                    <p className="text-xs text-gray-600">Weight, Height, BMI, Body Fat</p>
+                  </div>
                 </div>
-              </div>
-              <ChevronRight size={20} className="text-gray-400" />
-            </button>
+                <ChevronRight size={20} className="text-gray-400" />
+              </button>
 
-            <button
-              onClick={() => navigate('/profile/body-measurements')}
-              className="w-full flex items-center justify-between p-4 bg-gradient-to-br from-purple-50 to-pink-50 rounded-xl hover:shadow-md transition-all active:scale-[0.98]"
-            >
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 bg-purple-500 rounded-full flex items-center justify-center">
-                  <TrendingDown size={20} className="text-white" />
+              <button
+                onClick={() => navigate('/profile/body-measurements')}
+                className="w-full flex items-center justify-between p-4 bg-gradient-to-br from-purple-50 to-pink-50 rounded-xl hover:shadow-md transition-all active:scale-[0.98]"
+              >
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 bg-purple-500 rounded-full flex items-center justify-center">
+                    <TrendingDown size={20} className="text-white" />
+                  </div>
+                  <div className="text-left">
+                    <p className="font-semibold text-gray-900">Body Measurements</p>
+                    <p className="text-xs text-gray-600">Arm, Chest, Waist, Hip, Thigh</p>
+                  </div>
                 </div>
-                <div className="text-left">
-                  <p className="font-semibold text-gray-900">Body Measurements</p>
-                  <p className="text-xs text-gray-600">Arm, Chest, Waist, Hip, Thigh</p>
-                </div>
-              </div>
-              <ChevronRight size={20} className="text-gray-400" />
-            </button>
-          </div>
+                <ChevronRight size={20} className="text-gray-400" />
+              </button>
+            </div>
+          )}
         </div>
 
+        {/* Logout Section */}
+        <button
+          onClick={logout}
+          className="w-full flex items-center justify-center gap-2 py-4 bg-gradient-to-br from-red-50 to-rose-50 rounded-xl hover:shadow-md transition-all active:scale-[0.98] border border-red-100"
+        >
+          <LogOut size={20} className="text-red-600" />
+          <span className="font-semibold text-red-600">Logout</span>
+        </button>
+
       </div>
-      {/* Logout Section */}
-      <button
-        onClick={logout}
-        className="w-full flex items-center justify-center  py-4 bg-gradient-to-br from-red-50 to-rose-50 rounded-xl hover:shadow-md transition-all active:scale-[0.98] border border-red-100"
-      >
-        <LogOut size={20} className="text-red-600" />
-        <span className="font-semibold text-red-600">Logout</span>
-      </button>
     </div>
   );
 };

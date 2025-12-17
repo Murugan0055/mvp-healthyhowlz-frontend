@@ -13,11 +13,11 @@ const Login = () => {
   const onSubmit = async (data) => {
     const result = await login(data.email, data.password);
     if (result.success) {
-      navigate('/');
+      navigate('/diet');
     } else {
-      setError('root', { 
-        type: 'manual', 
-        message: result.error 
+      setError('root', {
+        type: 'manual',
+        message: result.error
       });
     }
   };
@@ -37,7 +37,7 @@ const Login = () => {
               label="Email"
               type="email"
               placeholder="you@example.com"
-              {...register('email', { 
+              {...register('email', {
                 required: 'Email is required',
                 pattern: {
                   value: /^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}$/i,
@@ -57,8 +57,8 @@ const Login = () => {
                 error={errors.password?.message}
               />
               <div className="flex justify-end">
-                <Link 
-                  to="/auth/forgot-password" 
+                <Link
+                  to="/auth/forgot-password"
                   className="text-sm font-medium text-primary hover:text-indigo-600 transition-colors"
                 >
                   Forgot password?
@@ -72,9 +72,9 @@ const Login = () => {
               </div>
             )}
 
-            <Button 
-              type="submit" 
-              className="w-full" 
+            <Button
+              type="submit"
+              className="w-full"
               isLoading={isSubmitting}
             >
               Sign in

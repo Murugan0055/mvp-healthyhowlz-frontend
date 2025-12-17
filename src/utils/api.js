@@ -3,8 +3,7 @@ import axios from "axios";
 // Create an axios instance with base configuration
 const api = axios.create({
   baseURL:
-    import.meta.env.VITE_API_BASE_URL ||
-    "https://mvp-healthyhowlz-backend.onrender.com/api",
+    import.meta.env.VITE_API_BASE_URL ?? "https://mvp-healthyhowlz-backend.onrender.com/api",
   headers: {
     "Content-Type": "application/json",
   },

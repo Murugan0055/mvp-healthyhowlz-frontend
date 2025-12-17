@@ -306,7 +306,7 @@ const BodyMeasurements = () => {
   const latestMeasurement = measurements[0];
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-gray-50 to-white pb-28">
+    <div className="min-h-screen bg-gradient-to-b from-gray-50 to-white pb-20">
       {/* Header */}
       <div className="sticky top-0 bg-white/95 backdrop-blur-lg z-10 border-b border-gray-100 px-4 py-4 flex items-center justify-between shadow-sm">
         <button
@@ -351,9 +351,23 @@ const BodyMeasurements = () => {
       {/* Measurements History */}
       <div className="px-4 mt-6 space-y-3">
         {loading ? (
-          <div className="flex justify-center py-12">
-            <Loader2 size={48} className="animate-spin text-primary" />
-          </div>
+          // Skeleton Loading
+          Array.from({ length: 3 }).map((_, idx) => (
+            <div key={idx} className="bg-white p-5 rounded-2xl shadow-md border border-gray-100 animate-pulse">
+              <div className="flex items-center gap-2 mb-3">
+                <div className="w-4 h-4 bg-gray-200 rounded" />
+                <div className="h-4 bg-gray-200 rounded w-24" />
+              </div>
+              <div className="space-y-2">
+                {Array.from({ length: 5 }).map((_, i) => (
+                  <div key={i} className="flex justify-between items-center p-2 bg-gray-100 rounded-lg">
+                    <div className="h-3 bg-gray-200 rounded w-16" />
+                    <div className="h-3 bg-gray-200 rounded w-12" />
+                  </div>
+                ))}
+              </div>
+            </div>
+          ))
         ) : measurements.length === 0 ? (
           <div className="text-center py-16">
             <div className="w-20 h-20 bg-gradient-to-br from-purple-100 to-pink-100 rounded-3xl flex items-center justify-center mx-auto mb-4">

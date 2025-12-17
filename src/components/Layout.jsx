@@ -6,7 +6,7 @@ const Layout = () => {
   const location = useLocation();
 
   const navItems = [
-    { path: '/', icon: Home, label: 'Home' },
+    // { path: '/', icon: Home, label: 'Home' },
     { path: '/diet', icon: Utensils, label: 'Diet' },
     { path: '/workout', icon: Dumbbell, label: 'Workout' },
     { path: '/profile', icon: User, label: 'Profile' },
