@@ -33,21 +33,22 @@ export const AuthProvider = ({ children }) => {
       localStorage.setItem('token', token);
       localStorage.setItem('user', JSON.stringify(user));
       setUser(user);
-      return { success: true };
+      return { success: true, user };
     } catch (error) {
       console.error("Login error", error);
-      return { 
-        success: false, 
-        error: error.response?.data?.error || 'Login failed' 
+      return {
+        success: false,
+        error: error.response?.data?.error || 'Login failed'
       };
     }
   };
 
-  const signup = async (email, password) => {
+  const signup = async (email, password, role = 'client') => {
     try {
       const response = await api.post('/auth/signup', {
         email,
         password,
+        role,
       });
       const { user, token } = response.data;
       localStorage.setItem('token', token);
@@ -56,9 +57,9 @@ export const AuthProvider = ({ children }) => {
       return { success: true };
     } catch (error) {
       console.error("Signup error", error);
-      return { 
-        success: false, 
-        error: error.response?.data?.error || 'Signup failed' 
+      return {
+        success: false,
+        error: error.response?.data?.error || 'Signup failed'
       };
     }
   };

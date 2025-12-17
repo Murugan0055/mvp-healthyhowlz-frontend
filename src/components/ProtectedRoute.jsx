@@ -6,7 +6,7 @@ import { useAuth } from '../context/AuthContext';
  * Redirects to login if user is not authenticated
  * Preserves the attempted location for redirect after login
  */
-const ProtectedRoute = ({ children }) => {
+const ProtectedRoute = ({ children, allowedRoles }) => {
   const { user, loading } = useAuth();
   const location = useLocation();
 
@@ -23,12 +23,23 @@ const ProtectedRoute = ({ children }) => {
   }
 
   // If not authenticated, redirect to login
-  // Store the attempted location so we can redirect back after login
   if (!user) {
     return <Navigate to="/auth/login" state={{ from: location }} replace />;
   }
 
-  // User is authenticated, render the protected content
+  // Role-based access control
+  if (allowedRoles && !allowedRoles.includes(user.role)) {
+    // Redirect based on user's actual role to avoid unauthorized access
+    if (user.role === 'trainer') {
+      return <Navigate to="/trainer" replace />;
+    } else if (user.role === 'gym_owner') {
+      return <Navigate to="/gym-owner" replace />;
+    } else {
+      return <Navigate to="/" replace />;
+    }
+  }
+
+  // User is authenticated and authorized, render the protected content
   return children;
 };
 

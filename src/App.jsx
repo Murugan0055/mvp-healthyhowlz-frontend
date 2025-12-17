@@ -19,6 +19,8 @@ import WorkoutListPage from './pages/WorkoutListPage'
 import Profile from './pages/Profile'
 import BodyMetrics from './pages/BodyMetrics'
 import BodyMeasurements from './pages/BodyMeasurements'
+import TrainerLanding from './pages/TrainerLanding'
+import GymOwnerLanding from './pages/GymOwnerLanding'
 
 function App() {
   return (
@@ -55,7 +57,7 @@ function App() {
         <Route
           path="/"
           element={
-            <ProtectedRoute>
+            <ProtectedRoute allowedRoles={['client']}>
               <Layout />
             </ProtectedRoute>
           }
@@ -70,7 +72,7 @@ function App() {
           <Route
             path="/diet/meals/:id"
             element={
-              <ProtectedRoute>
+              <ProtectedRoute allowedRoles={['client']}>
                 <MealDetailPage />
               </ProtectedRoute>
             }
@@ -79,7 +81,7 @@ function App() {
           <Route
             path="/diet/meals/all"
             element={
-              <ProtectedRoute>
+              <ProtectedRoute allowedRoles={['client']}>
                 <MealsListPage />
               </ProtectedRoute>
             }
@@ -90,6 +92,26 @@ function App() {
           <Route path="profile/body-metrics" element={<BodyMetrics />} />
           <Route path="profile/body-measurements" element={<BodyMeasurements />} />
         </Route >
+
+        {/* Trainer Routes */}
+        <Route
+          path="/trainer"
+          element={
+            <ProtectedRoute allowedRoles={['trainer']}>
+              <TrainerLanding />
+            </ProtectedRoute>
+          }
+        />
+
+        {/* Gym Owner Routes */}
+        <Route
+          path="/gym-owner"
+          element={
+            <ProtectedRoute allowedRoles={['gym_owner']}>
+              <GymOwnerLanding />
+            </ProtectedRoute>
+          }
+        />
 
 
         {/* Fallback Routes */}

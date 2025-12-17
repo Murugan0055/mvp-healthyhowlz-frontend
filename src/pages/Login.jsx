@@ -13,7 +13,14 @@ const Login = () => {
   const onSubmit = async (data) => {
     const result = await login(data.email, data.password);
     if (result.success) {
-      navigate('/diet');
+      const role = result.user?.role;
+      if (role === 'trainer') {
+        navigate('/trainer');
+      } else if (role === 'gym_owner') {
+        navigate('/gym-owner');
+      } else {
+        navigate('/');
+      }
     } else {
       setError('root', {
         type: 'manual',
