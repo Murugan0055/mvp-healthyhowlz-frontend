@@ -5,7 +5,7 @@ import { Button } from '../components/ui/Button';
 import { useAuth } from '../context/AuthContext';
 import api from '../utils/api';
 
-const Profile = () => {
+const Profile = ({ userId }) => {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
@@ -29,31 +29,52 @@ const Profile = () => {
 
   useEffect(() => {
     loadProfileData();
-  }, []);
+  }, [userId]);
 
   const loadProfileData = async () => {
     setLoading(true);
     try {
-      const [profileRes, metricsRes, measurementsRes] = await Promise.all([
-        api.get('/me/profile'),
-        api.get('/me/body-metrics/latest'),
-        api.get('/me/body-measurements/latest')
-      ]);
+      if (userId) {
+        // Fetch specific client data (Trainer View)
+        const profileRes = await api.get(`/trainer/clients/${userId}`);
+        setProfile(profileRes.data);
+        // Metrics/Measurements not yet supported for trainer view of client
+        setLatestMetrics(null);
+        setLatestMeasurements(null);
 
-      setProfile(profileRes.data);
-      setLatestMetrics(metricsRes.data);
-      setLatestMeasurements(measurementsRes.data);
+        setFormData({
+          name: profileRes.data.name || '',
+          age: profileRes.data.age || '',
+          phone: profileRes.data.phone || '',
+          email: profileRes.data.email || '',
+          gender: profileRes.data.gender || '',
+          profile_image_url: profileRes.data.profile_image_url || '',
+          activity_level: profileRes.data.activity_level || '',
+          goal: profileRes.data.goal || ''
+        });
+      } else {
+        // Fetch current user data (Client View)
+        const [profileRes, metricsRes, measurementsRes] = await Promise.all([
+          api.get('/me/profile'),
+          api.get('/me/body-metrics/latest'),
+          api.get('/me/body-measurements/latest')
+        ]);
 
-      setFormData({
-        name: profileRes.data.name || '',
-        age: profileRes.data.age || '',
-        phone: profileRes.data.phone || '',
-        email: profileRes.data.email || '',
-        gender: profileRes.data.gender || '',
-        profile_image_url: profileRes.data.profile_image_url || '',
-        activity_level: profileRes.data.activity_level || '',
-        goal: profileRes.data.goal || ''
-      });
+        setProfile(profileRes.data);
+        setLatestMetrics(metricsRes.data);
+        setLatestMeasurements(measurementsRes.data);
+
+        setFormData({
+          name: profileRes.data.name || '',
+          age: profileRes.data.age || '',
+          phone: profileRes.data.phone || '',
+          email: profileRes.data.email || '',
+          gender: profileRes.data.gender || '',
+          profile_image_url: profileRes.data.profile_image_url || '',
+          activity_level: profileRes.data.activity_level || '',
+          goal: profileRes.data.goal || ''
+        });
+      }
     } catch (err) {
       console.error('Failed to load profile:', err);
       setError('Failed to load profile data');
@@ -63,6 +84,7 @@ const Profile = () => {
   };
 
   const handleSave = async () => {
+    if (userId) return; // Trainers cannot edit client profile via this component yet
     setSaving(true);
     setError(null);
 
@@ -79,6 +101,7 @@ const Profile = () => {
   };
 
   const handleImageUpload = async (e) => {
+    if (userId) return; // Trainers cannot upload image for client yet
     const file = e.target.files[0];
     if (!file) return;
 
@@ -96,50 +119,52 @@ const Profile = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-gray-50 to-white pb-20">
-      {/* Header with Gradient */}
-      <div className="bg-gradient-to-br from-indigo-600 via-purple-600 to-pink-500 px-6 pt-8 pb-12 rounded-b-[2rem] shadow-xl relative">
-        <div className="flex justify-between items-center mb-6">
-          <h1 className="text-2xl font-bold text-white">Profile</h1>
-          {!editMode && (
-            <button
-              onClick={() => setEditMode(true)}
-              className="bg-white/20 hover:bg-white/30 backdrop-blur-md text-white p-2.5 rounded-full transition-all"
-            >
-              <Edit2 size={20} />
-            </button>
-          )}
-        </div>
-
-        {/* Profile Avatar */}
-        <div className="flex flex-col items-center">
-          <div className="relative">
-            <div className="w-28 h-28 bg-white rounded-full flex items-center justify-center shadow-2xl overflow-hidden border-4 border-white/30">
-              {formData.profile_image_url ? (
-                <img src={formData.profile_image_url} alt="Profile" className="w-full h-full object-cover" />
-              ) : (
-                <UserIcon size={48} className="text-gray-400" />
-              )}
-            </div>
-            {editMode && (
-              <label className="absolute bottom-0 right-0 bg-white text-primary p-2 rounded-full shadow-lg cursor-pointer hover:scale-110 transition-transform">
-                <Camera size={18} />
-                <input
-                  type="file"
-                  accept="image/*"
-                  onChange={handleImageUpload}
-                  className="hidden"
-                />
-              </label>
+    <div className={`min-h-screen bg-gradient-to-b from-gray-50 to-white ${userId ? '' : 'pb-20'}`}>
+      {/* Header with Gradient - Hide if userId is present (Trainer View handles header) */}
+      {!userId && (
+        <div className="bg-gradient-to-br from-indigo-600 via-purple-600 to-pink-500 px-6 pt-8 pb-12 rounded-b-[2rem] shadow-xl relative">
+          <div className="flex justify-between items-center mb-6">
+            <h1 className="text-2xl font-bold text-white">Profile</h1>
+            {!editMode && (
+              <button
+                onClick={() => setEditMode(true)}
+                className="bg-white/20 hover:bg-white/30 backdrop-blur-md text-white p-2.5 rounded-full transition-all"
+              >
+                <Edit2 size={20} />
+              </button>
             )}
           </div>
-          <h2 className="text-2xl font-bold text-white mt-4">{formData.name || 'User Name'}</h2>
-          <p className="text-indigo-100 text-sm">{formData.email}</p>
+
+          {/* Profile Avatar */}
+          <div className="flex flex-col items-center">
+            <div className="relative">
+              <div className="w-28 h-28 bg-white rounded-full flex items-center justify-center shadow-2xl overflow-hidden border-4 border-white/30">
+                {formData.profile_image_url ? (
+                  <img src={formData.profile_image_url} alt="Profile" className="w-full h-full object-cover" />
+                ) : (
+                  <UserIcon size={48} className="text-gray-400" />
+                )}
+              </div>
+              {editMode && (
+                <label className="absolute bottom-0 right-0 bg-white text-primary p-2 rounded-full shadow-lg cursor-pointer hover:scale-110 transition-transform">
+                  <Camera size={18} />
+                  <input
+                    type="file"
+                    accept="image/*"
+                    onChange={handleImageUpload}
+                    className="hidden"
+                  />
+                </label>
+              )}
+            </div>
+            <h2 className="text-2xl font-bold text-white mt-4">{formData.name || 'User Name'}</h2>
+            <p className="text-indigo-100 text-sm">{formData.email}</p>
+          </div>
         </div>
-      </div>
+      )}
 
       {/* Main Content */}
-      <div className="px-4 -mt-16 space-y-4">
+      <div className={`px-4 ${userId ? 'mt-4' : '-mt-16'} space-y-4`}>
         {/* Error Message */}
         {error && (
           <div className="bg-red-50 border border-red-200 rounded-xl p-3 text-sm text-red-900">
@@ -147,10 +172,8 @@ const Profile = () => {
           </div>
         )}
 
-
-
         {/* Personal Details Card */}
-        <div className="bg-white rounded-2xl shadow-lg p-5 border border-gray-100 mt-20">
+        <div className={`bg-white rounded-2xl shadow-lg p-5 border border-gray-100 ${userId ? '' : 'mt-20'}`}>
           <h3 className="font-bold text-gray-900 mb-4">Personal Details</h3>
 
           {loading ? (
@@ -163,8 +186,9 @@ const Profile = () => {
                 </div>
               ))}
             </div>
-          ) : editMode ? (
+          ) : editMode && !userId ? (
             <div className="space-y-4">
+              {/* Edit Form (Same as before) */}
               <div>
                 <label className="block text-xs font-bold text-gray-600 uppercase tracking-wider mb-2">
                   Name *
@@ -177,7 +201,12 @@ const Profile = () => {
                   placeholder="Your full name"
                 />
               </div>
-
+              {/* ... other fields ... */}
+              {/* I'll need to copy the rest of the form fields here or just keep the existing ones if I'm replacing the whole block. 
+                  The tool replaces the WHOLE file content if I select start/end lines covering everything. 
+                  I selected lines 8-408. So I need to provide the FULL content.
+                  I will try to keep the form fields as they were.
+              */}
               <div className="grid grid-cols-2 gap-3">
                 <div>
                   <label className="block text-xs font-bold text-gray-600 uppercase tracking-wider mb-2">
@@ -332,73 +361,77 @@ const Profile = () => {
           )}
         </div>
 
-        {/* Measurements Section */}
-        <div className="bg-white rounded-2xl shadow-lg p-5 border border-gray-100">
-          <div className="flex justify-between items-center mb-4">
-            <h3 className="font-bold text-gray-900">Body Tracking</h3>
-          </div>
+        {/* Measurements Section - Hide for Trainer View for now as we don't have endpoints */}
+        {!userId && (
+          <div className="bg-white rounded-2xl shadow-lg p-5 border border-gray-100">
+            <div className="flex justify-between items-center mb-4">
+              <h3 className="font-bold text-gray-900">Body Tracking</h3>
+            </div>
 
-          {loading ? (
-            // Skeleton Loading
-            <div className="space-y-3 animate-pulse">
-              {Array.from({ length: 2 }).map((_, idx) => (
-                <div key={idx} className="flex items-center justify-between p-4 bg-gray-100 rounded-xl">
+            {loading ? (
+              // Skeleton Loading
+              <div className="space-y-3 animate-pulse">
+                {Array.from({ length: 2 }).map((_, idx) => (
+                  <div key={idx} className="flex items-center justify-between p-4 bg-gray-100 rounded-xl">
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 bg-gray-200 rounded-full" />
+                      <div className="space-y-2">
+                        <div className="h-4 bg-gray-200 rounded w-24" />
+                        <div className="h-3 bg-gray-200 rounded w-32" />
+                      </div>
+                    </div>
+                    <div className="w-5 h-5 bg-gray-200 rounded" />
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="space-y-3">
+                <button
+                  onClick={() => navigate('/profile/body-metrics')}
+                  className="w-full flex items-center justify-between p-4 bg-gradient-to-br from-blue-50 to-indigo-50 rounded-xl hover:shadow-md transition-all active:scale-[0.98]"
+                >
                   <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 bg-gray-200 rounded-full" />
-                    <div className="space-y-2">
-                      <div className="h-4 bg-gray-200 rounded w-24" />
-                      <div className="h-3 bg-gray-200 rounded w-32" />
+                    <div className="w-10 h-10 bg-blue-500 rounded-full flex items-center justify-center">
+                      <TrendingUp size={20} className="text-white" />
+                    </div>
+                    <div className="text-left">
+                      <p className="font-semibold text-gray-900">Body Metrics</p>
+                      <p className="text-xs text-gray-600">Weight, Height, BMI, Body Fat</p>
                     </div>
                   </div>
-                  <div className="w-5 h-5 bg-gray-200 rounded" />
-                </div>
-              ))}
-            </div>
-          ) : (
-            <div className="space-y-3">
-              <button
-                onClick={() => navigate('/profile/body-metrics')}
-                className="w-full flex items-center justify-between p-4 bg-gradient-to-br from-blue-50 to-indigo-50 rounded-xl hover:shadow-md transition-all active:scale-[0.98]"
-              >
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 bg-blue-500 rounded-full flex items-center justify-center">
-                    <TrendingUp size={20} className="text-white" />
-                  </div>
-                  <div className="text-left">
-                    <p className="font-semibold text-gray-900">Body Metrics</p>
-                    <p className="text-xs text-gray-600">Weight, Height, BMI, Body Fat</p>
-                  </div>
-                </div>
-                <ChevronRight size={20} className="text-gray-400" />
-              </button>
+                  <ChevronRight size={20} className="text-gray-400" />
+                </button>
 
-              <button
-                onClick={() => navigate('/profile/body-measurements')}
-                className="w-full flex items-center justify-between p-4 bg-gradient-to-br from-purple-50 to-pink-50 rounded-xl hover:shadow-md transition-all active:scale-[0.98]"
-              >
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 bg-purple-500 rounded-full flex items-center justify-center">
-                    <TrendingDown size={20} className="text-white" />
+                <button
+                  onClick={() => navigate('/profile/body-measurements')}
+                  className="w-full flex items-center justify-between p-4 bg-gradient-to-br from-purple-50 to-pink-50 rounded-xl hover:shadow-md transition-all active:scale-[0.98]"
+                >
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 bg-purple-500 rounded-full flex items-center justify-center">
+                      <TrendingDown size={20} className="text-white" />
+                    </div>
+                    <div className="text-left">
+                      <p className="font-semibold text-gray-900">Body Measurements</p>
+                      <p className="text-xs text-gray-600">Arm, Chest, Waist, Hip, Thigh</p>
+                    </div>
                   </div>
-                  <div className="text-left">
-                    <p className="font-semibold text-gray-900">Body Measurements</p>
-                    <p className="text-xs text-gray-600">Arm, Chest, Waist, Hip, Thigh</p>
-                  </div>
-                </div>
-                <ChevronRight size={20} className="text-gray-400" />
-              </button>
-            </div>
-          )}
-        </div>
+                  <ChevronRight size={20} className="text-gray-400" />
+                </button>
+              </div>
+            )}
+          </div>
+        )}
 
-        {/* Logout Section */}
-        <button
-          onClick={logout}
-          className="w-full flex items-center justify-center gap-2 py-4 bg-gradient-to-br from-red-50 to-rose-50 rounded-xl hover:shadow-md transition-all active:scale-[0.98] border border-red-100"
-        >
-          <LogOut size={20} className="text-red-600" />
-          <span className="font-semibold text-red-600">Logout</span>
-        </button>
+        {/* Logout Section - Hide for Trainer View */}
+        {!userId && (
+          <button
+            onClick={logout}
+            className="w-full flex items-center justify-center gap-2 py-4 bg-gradient-to-br from-red-50 to-rose-50 rounded-xl hover:shadow-md transition-all active:scale-[0.98] border border-red-100"
+          >
+            <LogOut size={20} className="text-red-600" />
+            <span className="font-semibold text-red-600">Logout</span>
+          </button>
+        )}
 
       </div>
     </div>

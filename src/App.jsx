@@ -1,4 +1,4 @@
-import { Navigate, Route, Routes } from 'react-router-dom'
+import { Navigate, Outlet, Route, Routes } from 'react-router-dom'
 import Layout from './components/Layout'
 import ProtectedRoute from './components/ProtectedRoute'
 import PublicRoute from './components/PublicRoute'
@@ -21,6 +21,12 @@ import BodyMetrics from './pages/BodyMetrics'
 import BodyMeasurements from './pages/BodyMeasurements'
 import TrainerLanding from './pages/TrainerLanding'
 import GymOwnerLanding from './pages/GymOwnerLanding'
+import TrainerClients from './pages/TrainerClients'
+import TrainerAddClient from './pages/TrainerAddClient'
+import TrainerClientDetail from './pages/TrainerClientDetail'
+import TrainerLayout from './components/TrainerLayout'
+import TrainerLibrary from './pages/TrainerLibrary'
+import TrainerDietPlanBuilder from './pages/TrainerDietPlanBuilder'
 
 function App() {
   return (
@@ -98,10 +104,23 @@ function App() {
           path="/trainer"
           element={
             <ProtectedRoute allowedRoles={['trainer']}>
-              <TrainerLanding />
+              <TrainerLayout />
             </ProtectedRoute>
           }
-        />
+        >
+          <Route index element={<TrainerLanding />} />
+          <Route path="clients" element={<TrainerClients />} />
+          <Route path="clients/add" element={<TrainerAddClient />} />
+          <Route path="clients/:clientId" element={<TrainerClientDetail />} />
+
+          <Route path="clients/:clientId/diet" element={<DietTracker />} />
+          <Route path="clients/:clientId/diet/plan" element={<DietPlanScreen />} />
+          <Route path="clients/:clientId/diet/plan/new" element={<TrainerDietPlanBuilder />} />
+          <Route path="clients/:clientId/diet/meals/all" element={<MealsListPage />} />
+
+          <Route path="library" element={<TrainerLibrary />} />
+          <Route path="profile" element={<Profile />} />
+        </Route>
 
         {/* Gym Owner Routes */}
         <Route

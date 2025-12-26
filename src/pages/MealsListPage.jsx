@@ -1,13 +1,16 @@
-import React, { useState, useEffect, useRef, useCallback } from 'react';
-import { useNavigate } from 'react-router-dom';
+import React, { useState, useEffect, useCallback } from 'react';
+import { useNavigate, useParams } from 'react-router-dom';
 import { ArrowLeft, Calendar, ChevronRight, Image as ImageIcon, AlertCircle } from 'lucide-react';
 import api from '../utils/api';
 
 const MealsListPage = () => {
   const navigate = useNavigate();
+  const { clientId } = useParams();
+
   const [meals, setMeals] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [clientName, setClientName] = useState('');
 
   // Date filters - default to last 30 days
   const [fromDate, setFromDate] = useState(() => {
@@ -24,7 +27,11 @@ const MealsListPage = () => {
       setLoading(true);
       setError(null);
 
-      const response = await api.get('/meals', {
+      const url = clientId
+        ? `/trainer/clients/${clientId}/meals`
+        : '/meals';
+
+      const response = await api.get(url, {
         params: {
           from_date: fromDate,
           to_date: toDate,
@@ -32,6 +39,11 @@ const MealsListPage = () => {
           sort_order: 'DESC'
         }
       });
+
+      if (clientId && !clientName) {
+        const clientRes = await api.get(`/trainer/clients/${clientId}`);
+        setClientName(clientRes.data.name);
+      }
 
       setMeals(response.data);
     } catch (err) {
@@ -84,7 +96,9 @@ const MealsListPage = () => {
           >
             <ArrowLeft size={24} />
           </button>
-          <h2 className="font-bold text-lg text-gray-900">All Meal Logs</h2>
+          <h2 className="font-bold text-lg text-gray-900">
+            {clientId ? `${clientName || 'Client'}'s Meals` : 'All Meal Logs'}
+          </h2>
           <div className="w-10" />
         </div>
 
@@ -171,10 +185,10 @@ const MealsListPage = () => {
               No meals logged in the selected date range.
             </p>
             <button
-              onClick={() => navigate('/diet')}
+              onClick={() => navigate(clientId ? `/trainer/clients/${clientId}/diet` : '/diet')}
               className="px-6 py-3 bg-gradient-to-r from-indigo-600 to-purple-600 text-white rounded-xl font-semibold shadow-lg hover:shadow-xl transition-all"
             >
-              Add Your First Meal
+              {clientId ? 'Back to Diet' : 'Add Your First Meal'}
             </button>
           </div>
         )}
@@ -203,8 +217,8 @@ const MealsListPage = () => {
                   {groupedMeals[date].map((meal) => (
                     <div
                       key={meal.id}
-                      onClick={() => navigate(`/diet/meals/${meal.id}`)}
-                      className="bg-white p-4 rounded-2xl shadow-md border border-gray-100 flex gap-4 items-center active:scale-[0.98] hover:shadow-lg transition-all cursor-pointer"
+                      onClick={() => !clientId && navigate(`/diet/meals/${meal.id}`)}
+                      className={`bg-white p-4 rounded-2xl shadow-md border border-gray-100 flex gap-4 items-center ${!clientId ? 'active:scale-[0.98] hover:shadow-lg cursor-pointer' : ''} transition-all`}
                     >
                       {/* Meal Image/Icon */}
                       <div className="w-20 h-20 bg-gradient-to-br from-indigo-100 to-purple-100 rounded-2xl flex-shrink-0 flex items-center justify-center text-3xl shadow-inner overflow-hidden">
@@ -256,7 +270,7 @@ const MealsListPage = () => {
                         </div>
                       </div>
 
-                      <ChevronRight size={20} className="text-gray-300 flex-shrink-0" />
+                      {!clientId && <ChevronRight size={20} className="text-gray-300 flex-shrink-0" />}
                     </div>
                   ))}
                 </div>

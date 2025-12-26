@@ -1,17 +1,21 @@
 import { AlertCircle, ArrowLeft, Camera, ChevronRight, Flame, Image as ImageIcon, Loader2, Plus, RefreshCw, Utensils, WifiOff, X } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useParams } from 'react-router-dom';
 import { Button } from '../components/ui/Button';
 import { useAuth } from '../context/AuthContext';
 import api from '../utils/api';
 
-const DietTracker = () => {
+const DietTracker = ({ userId: propUserId }) => {
   const { user } = useAuth();
   const navigate = useNavigate();
+  const { clientId } = useParams();
+  const userId = propUserId || clientId;
+
   const [view, setView] = useState('LIST'); // 'LIST' or 'ADD'
   const [meals, setMeals] = useState([]);
   const [loading, setLoading] = useState(true);
   const [isOffline, setIsOffline] = useState(!navigator.onLine);
+  const [clientName, setClientName] = useState('');
 
   // Add Meal State
   const [analyzing, setAnalyzing] = useState(false);
@@ -52,20 +56,36 @@ const DietTracker = () => {
 
   // Load from cache or API on mount
   useEffect(() => {
-    const loadMeals = async () => {
-      // 1. Try Local Cache first for instant load
-      const cached = localStorage.getItem('cached_meals');
-      if (cached) {
-        setMeals(JSON.parse(cached));
-        setLoading(false);
+    const loadData = async () => {
+      // 1. Try Local Cache first for instant load (skip if viewing client)
+      if (!userId) {
+        const cached = localStorage.getItem('cached_meals');
+        if (cached) {
+          setMeals(JSON.parse(cached));
+          setLoading(false);
+        }
       }
 
       // 2. Fetch from API if online
       if (!isOffline) {
         try {
-          const response = await api.get(`/meals?from_date=${new Date().toISOString().split('T')[0]}&to_date=${new Date().toISOString().split('T')[0]} `);
+          const today = new Date().toISOString().split('T')[0];
+          let url = `/meals?from_date=${today}&to_date=${today}`;
+          if (userId) {
+            url = `/trainer/clients/${userId}/meals?from_date=${today}&to_date=${today}`;
+
+            // Also fetch client name if not already set
+            if (!clientName) {
+              const clientRes = await api.get(`/trainer/clients/${userId}`);
+              setClientName(clientRes.data.name);
+            }
+          }
+
+          const response = await api.get(url);
           setMeals(response.data);
-          localStorage.setItem('cached_meals', JSON.stringify(response.data));
+          if (!userId) {
+            localStorage.setItem('cached_meals', JSON.stringify(response.data));
+          }
         } catch (error) {
           console.error('Failed to fetch meals', error);
         } finally {
@@ -75,8 +95,8 @@ const DietTracker = () => {
         setLoading(false);
       }
     };
-    loadMeals();
-  }, [isOffline]);
+    loadData();
+  }, [isOffline, userId, clientName]);
 
   const handleImageUpload = async (e) => {
     const file = e.target.files[0];
@@ -190,7 +210,7 @@ const DietTracker = () => {
   };
 
   // --- ADD MEAL VIEW ---
-  if (view === 'ADD') {
+  if (view === 'ADD' && !userId) {
     const isFormValid = formData.meal_type && formData.calories_est;
 
     return (
@@ -446,85 +466,133 @@ const DietTracker = () => {
   const totalFat = meals.reduce((acc, meal) => acc + (meal.fat || 0), 0);
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-gray-50 to-white pb-28">
+    <div className={`min-h-screen bg-gradient-to-b from-gray-50 to-white ${userId ? '' : 'pb-28'}`}>
+      {/* Header with Gradient - Hide for Trainer View */}
       {/* Header with Gradient */}
-      <div className="bg-gradient-to-br from-indigo-600 via-purple-600 to-pink-500 px-6 pt-12 pb-8 rounded-b-[2rem] shadow-xl">
-        <div className="flex justify-between items-start mb-6">
-          <div className="flex-1">
-            <div className="flex items-center justify-between mb-1">
-              <h1 className="text-2xl font-bold text-white">Today's Meals</h1>
-            </div>
-            <p className="text-indigo-100 text-sm font-medium">
-              {new Date().toLocaleDateString(undefined, { weekday: 'long', month: 'long', day: 'numeric' })}
-            </p>
-          </div>
-          <div className="bg-white/20 backdrop-blur-md text-white px-4 py-2 rounded-full text-sm font-bold flex items-center gap-2 shadow-lg ml-3">
-            <Flame size={16} className="fill-white" />
-            {totalCalories}
-          </div>
-        </div>
-
-        {/* Progress Bar */}
-        <div className="space-y-2">
-          <div className="h-3 bg-white/20 backdrop-blur-sm rounded-full overflow-hidden shadow-inner">
-            <div
-              className="h-full bg-gradient-to-r from-yellow-300 via-orange-400 to-red-400 rounded-full transition-all duration-500 shadow-lg"
-              style={{ width: `${Math.min((totalCalories / 2500) * 100, 100)}%` }}
-            />
-          </div>
-          <div className="flex justify-between text-xs text-indigo-100 font-semibold">
-            <span>{totalCalories} / 2500 kcal</span>
-            <span>{Math.round((totalCalories / 2500) * 100)}%</span>
-          </div>
-        </div>
-
-        {/* Macros Summary */}
-        {meals.length > 0 && (
-          <div className="grid grid-cols-3 gap-3 mt-4">
-            <div className="bg-white/10 backdrop-blur-md rounded-xl p-3 text-center">
-              <p className="text-white/80 text-xs font-medium mb-1">Protein</p>
-              <p className="text-white text-lg font-bold">{totalProtein}g</p>
-            </div>
-            <div className="bg-white/10 backdrop-blur-md rounded-xl p-3 text-center">
-              <p className="text-white/80 text-xs font-medium mb-1">Carbs</p>
-              <p className="text-white text-lg font-bold">{totalCarbs}g</p>
-            </div>
-            <div className="bg-white/10 backdrop-blur-md rounded-xl p-3 text-center">
-              <p className="text-white/80 text-xs font-medium mb-1">Fat</p>
-              <p className="text-white text-lg font-bold">{totalFat}g</p>
-            </div>
-          </div>
-
-        )}
-
-        {/* Action Buttons */}
-        <div className="grid grid-cols-2 gap-3 mt-4">
-          <button
-            onClick={() => navigate('/diet/plan')}
-            className="bg-white/20 hover:bg-white/30 backdrop-blur-md rounded-xl p-4 text-center transition-all hover:scale-105 active:scale-95 border border-white/30 shadow-lg group"
-          >
-            <div className="flex flex-col items-center gap-2">
-              <div className="w-10 h-10 bg-white/20 rounded-full flex items-center justify-center group-hover:bg-white/30 transition-colors">
-                <Utensils size={20} className="text-white" />
+      {!userId ? (
+        <div className="bg-gradient-to-br from-indigo-600 via-purple-600 to-pink-500 px-6 pt-12 pb-8 rounded-b-[2rem] shadow-xl">
+          <div className="flex justify-between items-start mb-6">
+            <div className="flex-1">
+              <div className="flex items-center justify-between mb-1">
+                <h1 className="text-2xl font-bold text-white">Today's Meals</h1>
               </div>
-              <p className="text-white text-sm font-bold">View Diet Plan</p>
+              <p className="text-indigo-100 text-sm font-medium">
+                {new Date().toLocaleDateString(undefined, { weekday: 'long', month: 'long', day: 'numeric' })}
+              </p>
             </div>
-          </button>
+            <div className="bg-white/20 backdrop-blur-md text-white px-4 py-2 rounded-full text-sm font-bold flex items-center gap-2 shadow-lg ml-3">
+              <Flame size={16} className="fill-white" />
+              {totalCalories}
+            </div>
+          </div>
 
-          <button
-            onClick={() => navigate('/diet/meals/all')}
-            className="bg-white/20 hover:bg-white/30 backdrop-blur-md rounded-xl p-4 text-center transition-all hover:scale-105 active:scale-95 border border-white/30 shadow-lg group"
-          >
-            <div className="flex flex-col items-center gap-2">
-              <div className="w-10 h-10 bg-white/20 rounded-full flex items-center justify-center group-hover:bg-white/30 transition-colors">
-                <ChevronRight size={20} className="text-white" />
+          {/* Progress Bar */}
+          <div className="space-y-2">
+            <div className="h-3 bg-white/20 backdrop-blur-sm rounded-full overflow-hidden shadow-inner">
+              <div
+                className="h-full bg-gradient-to-r from-yellow-300 via-orange-400 to-red-400 rounded-full transition-all duration-500 shadow-lg"
+                style={{ width: `${Math.min((totalCalories / 2500) * 100, 100)}%` }}
+              />
+            </div>
+            <div className="flex justify-between text-xs text-indigo-100 font-semibold">
+              <span>{totalCalories} / 2500 kcal</span>
+              <span>{Math.round((totalCalories / 2500) * 100)}%</span>
+            </div>
+          </div>
+
+          {/* Macros Summary */}
+          {meals.length > 0 && (
+            <div className="grid grid-cols-3 gap-3 mt-4">
+              <div className="bg-white/10 backdrop-blur-md rounded-xl p-3 text-center">
+                <p className="text-white/80 text-xs font-medium mb-1">Protein</p>
+                <p className="text-white text-lg font-bold">{totalProtein}g</p>
               </div>
-              <p className="text-white text-sm font-bold">View All Meals</p>
+              <div className="bg-white/10 backdrop-blur-md rounded-xl p-3 text-center">
+                <p className="text-white/80 text-xs font-medium mb-1">Carbs</p>
+                <p className="text-white text-lg font-bold">{totalCarbs}g</p>
+              </div>
+              <div className="bg-white/10 backdrop-blur-md rounded-xl p-3 text-center">
+                <p className="text-white/80 text-xs font-medium mb-1">Fat</p>
+                <p className="text-white text-lg font-bold">{totalFat}g</p>
+              </div>
             </div>
-          </button>
-        </div>
+          )}
 
-      </div>
+          {/* Action Buttons */}
+          <div className="grid grid-cols-2 gap-3 mt-4">
+            <button
+              onClick={() => navigate('/diet/plan')}
+              className="bg-white/20 hover:bg-white/30 backdrop-blur-md rounded-xl p-4 text-center transition-all hover:scale-105 active:scale-95 border border-white/30 shadow-lg group"
+            >
+              <div className="flex flex-col items-center gap-2">
+                <div className="w-10 h-10 bg-white/20 rounded-full flex items-center justify-center group-hover:bg-white/30 transition-colors">
+                  <Utensils size={20} className="text-white" />
+                </div>
+                <p className="text-white text-sm font-bold">View Diet Plan</p>
+              </div>
+            </button>
+
+            <button
+              onClick={() => navigate('/diet/meals/all')}
+              className="bg-white/20 hover:bg-white/30 backdrop-blur-md rounded-xl p-4 text-center transition-all hover:scale-105 active:scale-95 border border-white/30 shadow-lg group"
+            >
+              <div className="flex flex-col items-center gap-2">
+                <div className="w-10 h-10 bg-white/20 rounded-full flex items-center justify-center group-hover:bg-white/30 transition-colors">
+                  <ChevronRight size={20} className="text-white" />
+                </div>
+                <p className="text-white text-sm font-bold">View All Meals</p>
+              </div>
+            </button>
+          </div>
+        </div>
+      ) : (
+        <div className="bg-white sticky top-0 z-10 border-b border-gray-100 shadow-sm">
+          <div className="px-4 py-4 flex items-center gap-3">
+            <button
+              onClick={() => navigate(-1)}
+              className="p-2 -ml-2 text-gray-600 hover:bg-gray-100 rounded-full transition-colors active:scale-95"
+              aria-label="Go back"
+            >
+              <ArrowLeft size={24} />
+            </button>
+            <div className="flex-1">
+              <h1 className="text-lg font-bold text-gray-900">{clientName || 'Client'}'s Diet</h1>
+              <p className="text-xs text-gray-500 font-medium">Daily Tracking</p>
+            </div>
+            <div className="bg-orange-50 text-orange-600 px-3 py-1.5 rounded-full text-xs font-bold flex items-center gap-1.5 border border-orange-100">
+              <Flame size={14} className="fill-orange-600" />
+              {totalCalories} kcal
+            </div>
+          </div>
+
+          {/* Action Buttons for Trainer */}
+          <div className="grid grid-cols-2 gap-2 px-4 pb-4">
+            <button
+              onClick={() => navigate(`/trainer/clients/${userId}/diet/plan`)}
+              className="bg-indigo-50 hover:bg-indigo-100 text-indigo-700 rounded-xl py-2.5 px-3 text-center transition-all flex items-center justify-center gap-2 text-xs font-bold border border-indigo-100"
+            >
+              <Utensils size={14} />
+              View Diet Plan
+            </button>
+
+            <button
+              onClick={() => navigate(`/trainer/clients/${userId}/diet/plan/new`)}
+              className="bg-green-50 hover:bg-green-100 text-green-700 rounded-xl py-2.5 px-3 text-center transition-all flex items-center justify-center gap-2 text-xs font-bold border border-green-100"
+            >
+              <Plus size={14} />
+              Create Diet Plan
+            </button>
+
+            <button
+              onClick={() => navigate(`/trainer/clients/${userId}/diet/meals/all`)}
+              className="bg-purple-50 hover:bg-purple-100 text-purple-700 rounded-xl py-2.5 px-3 text-center transition-all flex items-center justify-center gap-2 text-xs font-bold border border-purple-100 col-span-2"
+            >
+              <ChevronRight size={14} />
+              View All Meals
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* Offline Indicator */}
       {isOffline && (
@@ -536,7 +604,8 @@ const DietTracker = () => {
 
 
       {/* Meal List */}
-      <div className="px-4 mt-6 space-y-3">
+      <div className={`px-4 ${userId ? 'mt-0' : 'mt-6'} space-y-3`}>
+
         {loading ? (
           // Skeleton Loading
           Array.from({ length: 3 }).map((_, idx) => (
@@ -557,18 +626,22 @@ const DietTracker = () => {
               <ImageIcon size={36} className="text-indigo-500" />
             </div>
             <h3 className="text-xl font-bold text-gray-800 mb-2">No meals logged yet</h3>
-            <p className="text-gray-500 text-sm mb-6">Start tracking your nutrition today!</p>
-            <Button onClick={() => setView('ADD')} size="lg" className="shadow-lg">
-              <Plus size={20} className="mr-2" />
-              Add Your First Meal
-            </Button>
+            <p className="text-gray-500 text-sm mb-6">
+              {userId ? "Client hasn't logged any meals yet." : "Start tracking your nutrition today!"}
+            </p>
+            {!userId && (
+              <Button onClick={() => setView('ADD')} size="lg" className="shadow-lg">
+                <Plus size={20} className="mr-2" />
+                Add Your First Meal
+              </Button>
+            )}
           </div>
         ) : (
           meals.map((meal, idx) => (
             <div
               key={meal.id || idx}
-              onClick={() => navigate(`/diet/meals/${meal.id}`)}
-              className="bg-white p-4 rounded-2xl shadow-md border border-gray-100 flex gap-4 items-center active:scale-[0.98] hover:shadow-lg transition-all cursor-pointer"
+              onClick={() => !userId && navigate(`/diet/meals/${meal.id}`)}
+              className={`bg-white p-4 rounded-2xl shadow-md border border-gray-100 flex gap-4 items-center ${!userId ? 'active:scale-[0.98] hover:shadow-lg cursor-pointer' : ''} transition-all`}
             >
               {/* Meal Image/Icon */}
               <div className="w-20 h-20 bg-gradient-to-br from-indigo-100 to-purple-100 rounded-2xl flex-shrink-0 flex items-center justify-center text-3xl shadow-inner overflow-hidden">
@@ -616,16 +689,16 @@ const DietTracker = () => {
                 </div>
               </div>
 
-              <ChevronRight size={20} className="text-gray-300 flex-shrink-0" />
+              {!userId && <ChevronRight size={20} className="text-gray-300 flex-shrink-0" />}
             </div>
           ))
         )}
 
       </div>
 
-      {/* Floating Action Button */}
+      {/* Floating Action Button - Hide for Trainer View */}
       {
-        meals.length > 0 && (
+        meals.length > 0 && !userId && (
           <button
             onClick={() => setView('ADD')}
             className="fixed bottom-24 right-6 w-16 h-16 bg-gradient-to-br from-indigo-600 to-purple-600 text-white rounded-2xl shadow-2xl shadow-indigo-500/50 flex items-center justify-center hover:scale-110 active:scale-95 transition-all z-20 group"

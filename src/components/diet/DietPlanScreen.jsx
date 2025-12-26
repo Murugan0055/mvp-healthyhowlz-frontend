@@ -1,28 +1,44 @@
 import React, { useEffect, useState } from 'react';
 import { ArrowLeft, Calendar, ChevronDown, Info, Loader2 } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useParams } from 'react-router-dom';
 import api from '../../utils/api';
 import DietMealCard from './DietMealCard';
 import DietVersionModal from './DietVersionModal';
 
 const DietPlanScreen = () => {
   const navigate = useNavigate();
+  const { clientId: paramClientId } = useParams();
+  const clientId = paramClientId || 'me';
+
   const [loading, setLoading] = useState(true);
   const [currentPlan, setCurrentPlan] = useState(null);
   const [versions, setVersions] = useState([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [error, setError] = useState(null);
+  const [clientName, setClientName] = useState('');
 
   // Fetch initial data
   useEffect(() => {
     fetchCurrentPlan();
     fetchVersions();
-  }, []);
+    if (paramClientId) {
+      fetchClientName();
+    }
+  }, [clientId]);
+
+  const fetchClientName = async () => {
+    try {
+      const res = await api.get(`/trainer/clients/${paramClientId}`);
+      setClientName(res.data.name);
+    } catch (err) {
+      console.error('Failed to fetch client name', err);
+    }
+  };
 
   const fetchCurrentPlan = async () => {
     try {
       setLoading(true);
-      const res = await api.get('/clients/me/diet-plans/current');
+      const res = await api.get(`/clients/${clientId}/diet-plans/current`);
       setCurrentPlan(res.data);
       setError(null);
     } catch (err) {
@@ -39,7 +55,7 @@ const DietPlanScreen = () => {
 
   const fetchVersions = async () => {
     try {
-      const res = await api.get('/clients/me/diet-plans/versions');
+      const res = await api.get(`/clients/${clientId}/diet-plans/versions`);
       setVersions(res.data);
     } catch (err) {
       console.error('Failed to fetch versions', err);
@@ -50,7 +66,7 @@ const DietPlanScreen = () => {
     setIsModalOpen(false);
     setLoading(true);
     try {
-      const res = await api.get(`/clients/me/diet-plans/${version.id}`);
+      const res = await api.get(`/clients/${clientId}/diet-plans/${version.id}`);
       setCurrentPlan(res.data);
       setError(null);
     } catch (err) {
@@ -89,8 +105,18 @@ const DietPlanScreen = () => {
             <ArrowLeft size={24} />
           </button>
           <div className="flex-1">
-            <h1 className="text-lg font-bold text-gray-900">Diet Plan</h1>
+            <h1 className="text-lg font-bold text-gray-900">
+              {paramClientId ? `${clientName || 'Client'}'s Diet Plan` : 'Diet Plan'}
+            </h1>
           </div>
+          {paramClientId && (
+            <button
+              onClick={() => navigate(`/trainer/clients/${paramClientId}/diet/plan/new`)}
+              className="bg-indigo-600 text-white px-3 py-1.5 rounded-lg text-xs font-bold shadow-md active:scale-95 transition-all"
+            >
+              Create New
+            </button>
+          )}
         </div>
 
         {/* Version Selector */}
