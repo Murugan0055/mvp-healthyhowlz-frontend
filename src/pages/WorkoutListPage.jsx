@@ -1,12 +1,14 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useParams } from 'react-router-dom';
 import { ArrowLeft, Calendar, ChevronRight, Dumbbell, AlertCircle } from 'lucide-react';
 import api from '../utils/api';
 
 const WorkoutListPage = () => {
+  const { clientId } = useParams();
   const navigate = useNavigate();
   const [workouts, setWorkouts] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [clientName, setClientName] = useState('');
   const [error, setError] = useState(null);
 
   // Date filters - default to last 30 days
@@ -19,12 +21,27 @@ const WorkoutListPage = () => {
     return new Date().toISOString().split('T')[0];
   });
 
+  const fetchClientName = useCallback(async () => {
+    if (!clientId) return;
+    try {
+      const res = await api.get(`/trainer/clients/${clientId}`);
+      setClientName(res.data.name);
+    } catch (err) {
+      console.error('Failed to fetch client name', err);
+    }
+  }, [clientId]);
+
   const fetchWorkouts = useCallback(async () => {
     try {
       setLoading(true);
       setError(null);
 
-      const response = await api.get('/workout-sessions', {
+      let url = '/workout-sessions';
+      if (clientId) {
+        url = `/trainer/clients/${clientId}/workouts/history`;
+      }
+
+      const response = await api.get(url, {
         params: {
           from_date: fromDate,
           to_date: toDate
@@ -38,11 +55,12 @@ const WorkoutListPage = () => {
     } finally {
       setLoading(false);
     }
-  }, [fromDate, toDate]);
+  }, [fromDate, toDate, clientId]);
 
   useEffect(() => {
     fetchWorkouts();
-  }, [fetchWorkouts]);
+    if (clientId) fetchClientName();
+  }, [fetchWorkouts, fetchClientName, clientId]);
 
   // Group workouts by date
   const groupedWorkouts = workouts.reduce((groups, workout) => {
@@ -69,19 +87,30 @@ const WorkoutListPage = () => {
     </div>
   );
 
+  const handleBack = () => {
+    if (clientId) {
+      navigate(`/trainer/clients/${clientId}/workout`);
+    } else {
+      navigate('/workout');
+    }
+  };
+
   return (
     <div className="min-h-screen bg-gradient-to-b from-gray-50 to-white pb-20">
       {/* Header */}
       <div className="sticky top-0 bg-white/95 backdrop-blur-lg z-10 border-b border-gray-100 shadow-sm">
         <div className="px-4 py-4 flex items-center justify-between">
           <button
-            onClick={() => navigate(-1)}
+            onClick={handleBack}
             className="p-2 -ml-2 text-gray-600 hover:bg-gray-100 rounded-full transition-colors active:scale-95"
             aria-label="Go back"
           >
             <ArrowLeft size={24} />
           </button>
-          <h2 className="font-bold text-lg text-gray-900">Workout History</h2>
+          <div className="flex-1 text-center">
+            <h2 className="font-bold text-lg text-gray-900">Workout History</h2>
+            {clientId && <p className="text-xs text-gray-500 font-medium">For {clientName || 'Client'}</p>}
+          </div>
           <div className="w-10" />
         </div>
 
@@ -157,8 +186,8 @@ const WorkoutListPage = () => {
               <Dumbbell size={36} className="text-blue-500" />
             </div>
             <h3 className="text-xl font-bold text-gray-800 mb-2">No Workouts Found</h3>
-            <p className="text-gray-600 text-sm mb-6">
-              No workouts scheduled in the selected date range.
+            <p className="text-gray-600 text-sm mb-6 text-center">
+              No workouts {clientId ? "logged by client" : "scheduled"} in the selected date range.
             </p>
           </div>
         )}

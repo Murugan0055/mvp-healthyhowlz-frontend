@@ -26,6 +26,7 @@ import TrainerClientDetail from './pages/TrainerClientDetail'
 import TrainerLayout from './components/TrainerLayout'
 import TrainerLibrary from './pages/TrainerLibrary'
 import TrainerDietPlanBuilder from './pages/TrainerDietPlanBuilder'
+import TrainerWorkoutPlanBuilder from './pages/TrainerWorkoutPlanBuilder'
 
 function App() {
   return (
@@ -115,6 +116,11 @@ function App() {
           <Route path="clients/:clientId/diet/plan" element={<DietPlanScreen />} />
           <Route path="clients/:clientId/diet/plan/new" element={<TrainerDietPlanBuilder />} />
           <Route path="clients/:clientId/diet/meals/all" element={<MealsListPage />} />
+
+          <Route path="clients/:clientId/workout" element={<WorkoutTracker />} />
+          <Route path="clients/:clientId/workout/plan" element={<WorkoutPlanScreen />} />
+          <Route path="clients/:clientId/workout/plan/new" element={<TrainerWorkoutPlanBuilder />} />
+          <Route path="clients/:clientId/workout/all" element={<WorkoutListPage />} />
 
           <Route path="library" element={<TrainerLibrary />} />
           <Route path="profile" element={<Profile />} />

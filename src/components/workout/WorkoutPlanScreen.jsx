@@ -1,27 +1,43 @@
 import React, { useEffect, useState } from 'react';
 import { ArrowLeft, Calendar, ChevronDown, Info, Loader2, Dumbbell } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useParams } from 'react-router-dom';
 import api from '../../utils/api';
 import WorkoutVersionModal from './WorkoutVersionModal';
 import Skeleton from '../ui/Skeleton';
 
 const WorkoutPlanScreen = () => {
+  const { clientId: paramClientId } = useParams();
   const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
   const [currentPlan, setCurrentPlan] = useState(null);
   const [versions, setVersions] = useState([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [error, setError] = useState(null);
+  const [clientName, setClientName] = useState('');
+
+  const clientId = paramClientId || 'me';
 
   useEffect(() => {
     fetchCurrentPlan();
     fetchVersions();
-  }, []);
+    if (paramClientId) {
+      fetchClientName();
+    }
+  }, [clientId]);
+
+  const fetchClientName = async () => {
+    try {
+      const res = await api.get(`/trainer/clients/${paramClientId}`);
+      setClientName(res.data.name);
+    } catch (err) {
+      console.error('Failed to fetch client name', err);
+    }
+  };
 
   const fetchCurrentPlan = async () => {
     try {
       setLoading(true);
-      const res = await api.get('/clients/me/workout-plans/current');
+      const res = await api.get(`/clients/${clientId}/workout-plans/current`);
       setCurrentPlan(res.data);
       setError(null);
     } catch (err) {
@@ -38,7 +54,7 @@ const WorkoutPlanScreen = () => {
 
   const fetchVersions = async () => {
     try {
-      const res = await api.get('/clients/me/workout-plans/versions');
+      const res = await api.get(`/clients/${clientId}/workout-plans/versions`);
       setVersions(res.data);
     } catch (err) {
       console.error('Failed to fetch versions', err);
@@ -49,7 +65,7 @@ const WorkoutPlanScreen = () => {
     setIsModalOpen(false);
     setLoading(true);
     try {
-      const res = await api.get(`/clients/me/workout-plans/${version.id}`);
+      const res = await api.get(`/clients/${clientId}/workout-plans/${version.id}`);
       setCurrentPlan(res.data);
       setError(null);
     } catch (err) {
@@ -81,14 +97,30 @@ const WorkoutPlanScreen = () => {
       <div className="bg-white sticky top-0 z-10 border-b border-gray-100 shadow-sm">
         <div className="px-4 py-3 flex items-center gap-3">
           <button
-            onClick={() => navigate(-1)}
+            onClick={() => {
+              if (paramClientId) {
+                navigate(`/trainer/clients/${paramClientId}/workout`);
+              } else {
+                navigate(-1);
+              }
+            }}
             className="p-2 -ml-2 text-gray-600 hover:bg-gray-100 rounded-full transition-colors"
           >
             <ArrowLeft size={24} />
           </button>
           <div className="flex-1">
-            <h1 className="text-lg font-bold text-gray-900">Workout Plan</h1>
+            <h1 className="text-lg font-bold text-gray-900">
+              {paramClientId ? `${clientName || 'Client'}'s Workout Plan` : 'Workout Plan'}
+            </h1>
           </div>
+          {paramClientId && (
+            <button
+              onClick={() => navigate(`/trainer/clients/${paramClientId}/workout/plan/new`)}
+              className="bg-blue-600 text-white px-3 py-1.5 rounded-lg text-xs font-bold shadow-md active:scale-95 transition-all"
+            >
+              New Plan
+            </button>
+          )}
         </div>
 
         {/* Version Selector */}

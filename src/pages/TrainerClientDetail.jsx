@@ -49,37 +49,6 @@ const TrainerClientDetail = () => {
   const sessionProgress = client?.total_sessions ? (client.completed_sessions / client.total_sessions) * 100 : 0;
 
   // Render Sub-Views (Diet/Workout) with a simple back header
-  if (activeView === 'diet') {
-    return (
-      <div className="min-h-screen bg-gray-50">
-        <div className="bg-white sticky top-0 z-10 px-4 py-3 shadow-sm flex items-center gap-3">
-          <button onClick={() => setActiveView('dashboard')} className="p-2 hover:bg-gray-100 rounded-full">
-            <ArrowLeft size={20} className="text-gray-600" />
-          </button>
-          <h1 className="font-bold text-lg text-gray-900">Diet Plan</h1>
-        </div>
-        <div className="p-4">
-          <DietTracker userId={clientId} />
-        </div>
-      </div>
-    );
-  }
-
-  if (activeView === 'workout') {
-    return (
-      <div className="min-h-screen bg-gray-50">
-        <div className="bg-white sticky top-0 z-10 px-4 py-3 shadow-sm flex items-center gap-3">
-          <button onClick={() => setActiveView('dashboard')} className="p-2 hover:bg-gray-100 rounded-full">
-            <ArrowLeft size={20} className="text-gray-600" />
-          </button>
-          <h1 className="font-bold text-lg text-gray-900">Workout Plan</h1>
-        </div>
-        <div className="p-4">
-          <WorkoutTracker userId={clientId} />
-        </div>
-      </div>
-    );
-  }
 
   return (
     <div className="min-h-screen bg-gray-50 pb-20">
@@ -193,55 +162,57 @@ const TrainerClientDetail = () => {
             <span className="text-gray-900 font-bold text-sm">Diet Plan</span>
           </button>
 
-          <button
-            onClick={() => setActiveView('workout')}
-            className="bg-white hover:bg-blue-50 rounded-2xl shadow-sm border border-gray-100 p-5 flex flex-col items-center justify-center gap-3 transition-all active:scale-95 group relative overflow-hidden"
+          <div
+            onClick={() => navigate(`/trainer/clients/${clientId}/workout`)}
+            className="bg-white rounded-2xl shadow-sm border border-gray-100 p-5 flex flex-col items-center justify-center gap-3 hover:shadow-md transition-all active:scale-95 cursor-pointer group"
           >
-            <div className="absolute top-0 right-0 w-16 h-16 bg-blue-500/5 rounded-full -mr-8 -mt-8" />
-            <div className="w-12 h-12 rounded-xl bg-blue-100 flex items-center justify-center text-blue-600 group-hover:scale-110 transition-transform shadow-inner">
-              <Dumbbell size={24} />
+            <div className="w-14 h-14 bg-blue-50 text-blue-600 rounded-2xl flex items-center justify-center group-hover:bg-blue-600 group-hover:text-white transition-colors">
+              <Dumbbell size={28} />
             </div>
-            <span className="text-gray-900 font-bold text-sm">Workout Plan</span>
-          </button>
+            <div className="text-center">
+              <h3 className="font-bold text-gray-900">Workout Plan</h3>
+              <p className="text-xs text-gray-500">Track exercises</p>
+            </div>
+          </div>
         </div>
-      </div>
 
-      {/* Profile Details Section */}
-      <div className="px-4 relative z-20 mt-2">
-        <div className="bg-white rounded-3xl shadow-xl p-6">
-          <h3 className="font-bold text-gray-900 mb-4 text-lg">Personal Details</h3>
-          <div className="space-y-4">
-            {loading ? (
-              Array.from({ length: 5 }).map((_, i) => (
-                <div key={i} className="flex justify-between py-2 border-b border-gray-100">
-                  <Skeleton className="h-4 w-20 bg-gray-100" />
-                  <Skeleton className="h-4 w-24 bg-gray-100" />
-                </div>
-              ))
-            ) : (
-              <>
-                <div className="flex justify-between py-2 border-b border-gray-100">
-                  <span className="text-sm text-gray-500">Age</span>
-                  <span className="text-sm font-semibold text-gray-900">{client.age || 'Not set'}</span>
-                </div>
-                <div className="flex justify-between py-2 border-b border-gray-100">
-                  <span className="text-sm text-gray-500">Gender</span>
-                  <span className="text-sm font-semibold text-gray-900">{client.gender || 'Not set'}</span>
-                </div>
-                <div className="flex justify-between py-2 border-b border-gray-100">
-                  <span className="text-sm text-gray-500">Goal</span>
-                  <span className="text-sm font-semibold text-gray-900">{client.goal || 'Not set'}</span>
-                </div>
-                <div className="flex justify-between py-2 border-b border-gray-100">
-                  <span className="text-sm text-gray-500">Phone</span>
-                  <span className="text-sm font-semibold text-gray-900">{client.phone || 'Not set'}</span>
-                </div>
-                <div className="flex justify-between py-2">
-                  <span className="text-sm text-gray-500">Email</span>
-                  <span className="text-sm font-semibold text-gray-900">{client.email}</span>
-                </div>
-              </>
-            )}
+        {/* Profile Details Section */}
+        <div className="px-4 relative z-20 mt-2">
+          <div className="bg-white rounded-3xl shadow-xl p-6">
+            <h3 className="font-bold text-gray-900 mb-4 text-lg">Personal Details</h3>
+            <div className="space-y-4">
+              {loading ? (
+                Array.from({ length: 5 }).map((_, i) => (
+                  <div key={i} className="flex justify-between py-2 border-b border-gray-100">
+                    <Skeleton className="h-4 w-20 bg-gray-100" />
+                    <Skeleton className="h-4 w-24 bg-gray-100" />
+                  </div>
+                ))
+              ) : (
+                <>
+                  <div className="flex justify-between py-2 border-b border-gray-100">
+                    <span className="text-sm text-gray-500">Age</span>
+                    <span className="text-sm font-semibold text-gray-900">{client.age || 'Not set'}</span>
+                  </div>
+                  <div className="flex justify-between py-2 border-b border-gray-100">
+                    <span className="text-sm text-gray-500">Gender</span>
+                    <span className="text-sm font-semibold text-gray-900">{client.gender || 'Not set'}</span>
+                  </div>
+                  <div className="flex justify-between py-2 border-b border-gray-100">
+                    <span className="text-sm text-gray-500">Goal</span>
+                    <span className="text-sm font-semibold text-gray-900">{client.goal || 'Not set'}</span>
+                  </div>
+                  <div className="flex justify-between py-2 border-b border-gray-100">
+                    <span className="text-sm text-gray-500">Phone</span>
+                    <span className="text-sm font-semibold text-gray-900">{client.phone || 'Not set'}</span>
+                  </div>
+                  <div className="flex justify-between py-2">
+                    <span className="text-sm text-gray-500">Email</span>
+                    <span className="text-sm font-semibold text-gray-900">{client.email}</span>
+                  </div>
+                </>
+              )}
+            </div>
           </div>
         </div>
       </div>

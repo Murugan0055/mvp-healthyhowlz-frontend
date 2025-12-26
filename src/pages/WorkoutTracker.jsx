@@ -1,42 +1,59 @@
-import { Calendar, ChevronRight, Dumbbell, Trophy, WifiOff } from 'lucide-react';
-import { useEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { Calendar, ChevronRight, Dumbbell, Trophy, ArrowLeft, Plus, ListChecks } from 'lucide-react';
+import { useEffect, useState, useCallback } from 'react';
+import { useNavigate, useParams } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import api from '../utils/api';
 import WorkoutCard from '../components/workout/WorkoutCard';
 import Skeleton from '../components/ui/Skeleton';
 
-const WorkoutTracker = ({ userId }) => {
+const WorkoutTracker = ({ userId: propUserId }) => {
   const { user } = useAuth();
   const navigate = useNavigate();
+  const { clientId } = useParams();
+  const userId = propUserId || clientId;
+
   const [exercises, setExercises] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [clientName, setClientName] = useState('');
   const [currentDate, setCurrentDate] = useState(new Date().toISOString().split('T')[0]);
 
+  // Load client name if trainer viewing
+  useEffect(() => {
+    if (userId) {
+      const fetchClientName = async () => {
+        try {
+          const res = await api.get(`/trainer/clients/${userId}`);
+          setClientName(res.data.name);
+        } catch (err) {
+          console.error('Failed to fetch client name', err);
+        }
+      };
+      fetchClientName();
+    }
+  }, [userId]);
 
   // Load workouts
-  useEffect(() => {
-    const loadWorkouts = async () => {
-      setLoading(true);
-      try {
-        let url = `/workout-sessions?date=${currentDate}`;
-        if (userId) {
-          url = `/trainer/clients/${userId}/workouts?date=${currentDate}`;
-        }
-        const response = await api.get(url);
-        setExercises(response.data);
-      } catch (error) {
-        console.error('Failed to fetch workouts', error);
-      } finally {
-        setLoading(false);
+  const loadWorkouts = useCallback(async () => {
+    setLoading(true);
+    try {
+      let url = `/workout-sessions?date=${currentDate}`;
+      if (userId) {
+        url = `/trainer/clients/${userId}/workouts?date=${currentDate}`;
       }
-    };
-    loadWorkouts();
+      const response = await api.get(url);
+      setExercises(response.data);
+    } catch (error) {
+      console.error('Failed to fetch workouts', error);
+    } finally {
+      setLoading(false);
+    }
   }, [currentDate, userId]);
 
-  const handleToggleComplete = async (exercise, file = null) => {
-    if (userId) return; // Trainer cannot toggle completion for client yet
+  useEffect(() => {
+    loadWorkouts();
+  }, [loadWorkouts]);
 
+  const handleToggleComplete = async (exercise, file = null) => {
     // Optimistic update
     const originalExercises = [...exercises];
     const updatedExercises = exercises.map(ex =>
@@ -47,7 +64,11 @@ const WorkoutTracker = ({ userId }) => {
     try {
       if (exercise.is_completed) {
         // Mark incomplete
-        await api.post(`/workout-sessions/${exercise.id}/incomplete`, { date: currentDate });
+        if (userId) {
+          await api.post(`/trainer/clients/${userId}/workouts/${exercise.id}/incomplete`, { date: currentDate });
+        } else {
+          await api.post(`/workout-sessions/${exercise.id}/incomplete`, { date: currentDate });
+        }
       } else {
         // Mark complete
         if (file) {
@@ -55,13 +76,21 @@ const WorkoutTracker = ({ userId }) => {
           formData.append('date', currentDate);
           formData.append('machinePhoto', file);
 
-          await api.post(`/workout-sessions/${exercise.id}/complete`, formData, {
-            headers: {
-              'Content-Type': 'multipart/form-data',
-            },
-          });
+          if (userId) {
+            await api.post(`/trainer/clients/${userId}/workouts/${exercise.id}/complete`, formData, {
+              headers: { 'Content-Type': 'multipart/form-data' },
+            });
+          } else {
+            await api.post(`/workout-sessions/${exercise.id}/complete`, formData, {
+              headers: { 'Content-Type': 'multipart/form-data' },
+            });
+          }
         } else {
-          await api.post(`/workout-sessions/${exercise.id}/complete`, { date: currentDate });
+          if (userId) {
+            await api.post(`/trainer/clients/${userId}/workouts/${exercise.id}/complete`, { date: currentDate });
+          } else {
+            await api.post(`/workout-sessions/${exercise.id}/complete`, { date: currentDate });
+          }
         }
       }
     } catch (error) {
@@ -78,8 +107,8 @@ const WorkoutTracker = ({ userId }) => {
 
   return (
     <div className={`min-h-screen bg-gray-50 flex flex-col ${userId ? '' : 'pb-24'}`}>
-      {/* Header with Gradient - Hide for Trainer View */}
-      {!userId && (
+      {/* Header with Gradient - For Client View */}
+      {!userId ? (
         <div className="bg-gradient-to-br from-blue-600 via-cyan-600 to-teal-500 px-6 pt-12 pb-8 rounded-b-[2rem] shadow-xl">
           <div className="flex justify-between items-start mb-6">
             <div className="flex-1">
@@ -137,59 +166,92 @@ const WorkoutTracker = ({ userId }) => {
             </button>
           </div>
         </div>
+      ) : (
+        /* Trainer Header Sticky Header */
+        <div className="bg-white sticky top-0 z-10 border-b border-gray-100 shadow-sm">
+          <div className="px-4 py-4 flex items-center gap-3">
+            <button
+              onClick={() => navigate(`/trainer/clients/${userId}`)}
+              className="p-2 -ml-2 text-gray-600 hover:bg-gray-100 rounded-full transition-colors active:scale-95"
+              aria-label="Go back"
+            >
+              <ArrowLeft size={24} />
+            </button>
+            <div className="flex-1">
+              <h1 className="text-lg font-bold text-gray-900">{clientName || 'Client'}'s Workout</h1>
+              <p className="text-xs text-gray-500 font-medium">Daily Tracking</p>
+            </div>
+            <div className="bg-blue-50 text-blue-600 px-3 py-1.5 rounded-full text-xs font-bold flex items-center gap-1.5 border border-blue-100">
+              <Trophy size={14} className="fill-blue-600" />
+              {completedCount}/{totalCount}
+            </div>
+          </div>
+
+          {/* Action Buttons for Trainer */}
+          <div className="grid grid-cols-2 gap-3 px-4 pb-6">
+            <button
+              onClick={() => navigate(`/trainer/clients/${userId}/workout/plan`)}
+              className="bg-indigo-50 hover:bg-indigo-100 text-indigo-700 rounded-2xl py-5 px-4 text-center transition-all flex flex-col items-center justify-center gap-2 text-sm font-bold border border-indigo-100 shadow-sm active:scale-95"
+            >
+              <ListChecks size={20} />
+              View Workout Plan
+            </button>
+
+            <button
+              onClick={() => navigate(`/trainer/clients/${userId}/workout/plan/new`)}
+              className="bg-green-50 hover:bg-green-100 text-green-700 rounded-2xl py-5 px-4 text-center transition-all flex flex-col items-center justify-center gap-2 text-sm font-bold border border-green-100 shadow-sm active:scale-95"
+            >
+              <Plus size={20} />
+              Create Workout Plan
+            </button>
+
+            <button
+              onClick={() => navigate(`/trainer/clients/${userId}/workout/all`)}
+              className="bg-purple-50 hover:bg-purple-100 text-purple-700 rounded-2xl py-5 px-4 text-center transition-all flex flex-col items-center justify-center gap-2 text-sm font-bold border border-purple-100 col-span-2 shadow-sm active:scale-95"
+            >
+              <ChevronRight size={20} />
+              View All Workouts
+            </button>
+          </div>
+        </div>
       )}
 
 
-      {/* Workout List */}
-      <div className={`px-4 ${userId ? 'mt-0' : 'mt-6'} space-y-3`}>
-        {/* Trainer View: Add "Create/Edit Workout Plan" button */}
-        {userId && (
-          <div className="mb-6">
-            <button className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-5 rounded-2xl shadow-lg shadow-blue-500/20 transition-all flex items-center justify-center gap-2 text-sm active:scale-95">
-              <Dumbbell size={20} />
-              Create/Edit Workout Plan
-            </button>
-          </div>
-        )}
-
-        {/* Workout List Area */}
-        <div className="flex-1 flex flex-col px-4 mt-6">
-          <div className="space-y-3 flex-1 overflow-y-auto pb-4 flex flex-col justify-center items-center">
-
-            {loading ? (
-              // Skeleton Loading
-              Array.from({ length: 3 }).map((_, idx) => (
-                <div key={idx} className="bg-white p-4 rounded-2xl shadow-sm border border-gray-100">
-                  <div className="flex gap-4">
-                    <Skeleton className="w-12 h-12 rounded-xl flex-shrink-0" />
-                    <div className="flex-1 space-y-2">
-                      <Skeleton className="h-4 w-1/3" />
-                      <Skeleton className="h-3 w-2/3" />
-                    </div>
+      {/* Workout List Area */}
+      <div className={`flex-1 flex flex-col px-4 ${userId ? 'mt-4' : 'mt-6'}`}>
+        <div className="space-y-3 flex-1 overflow-y-auto pb-6">
+          {loading ? (
+            // Skeleton Loading
+            Array.from({ length: 3 }).map((_, idx) => (
+              <div key={idx} className="bg-white p-4 rounded-2xl shadow-sm border border-gray-100">
+                <div className="flex gap-4">
+                  <Skeleton className="w-12 h-12 rounded-xl flex-shrink-0" />
+                  <div className="flex-1 space-y-2">
+                    <Skeleton className="h-4 w-1/3" />
+                    <Skeleton className="h-3 w-2/3" />
                   </div>
                 </div>
-              ))
-            ) : exercises.length === 0 ? (
-              <div className="flex-1 flex flex-col items-center justify-center py-10">
-                <div className="w-20 h-20 bg-gradient-to-br from-blue-100 to-cyan-100 rounded-3xl flex items-center justify-center mb-4 shadow-lg">
-                  <Dumbbell size={36} className="text-blue-500" />
-                </div>
-                <h3 className="text-xl font-bold text-gray-800 mb-2 text-center">No Workouts Scheduled</h3>
-                <p className="text-gray-500 text-sm text-center">
-                  {userId ? "No workouts logged for today." : "No workouts scheduled for today."}
-                </p>
               </div>
-            ) : (
-              exercises.map((exercise) => (
-                <WorkoutCard
-                  key={exercise.id}
-                  exercise={exercise}
-                  onToggle={(file) => handleToggleComplete(exercise, file)}
-                  readOnly={!!userId} // Pass readOnly prop if userId is present
-                />
-              ))
-            )}
-          </div>
+            ))
+          ) : exercises.length === 0 ? (
+            <div className="flex-1 flex flex-col items-center justify-center py-20">
+              <div className="w-20 h-20 bg-gradient-to-br from-blue-100 to-cyan-100 rounded-3xl flex items-center justify-center mb-4 shadow-lg">
+                <Dumbbell size={36} className="text-blue-500" />
+              </div>
+              <h3 className="text-xl font-bold text-gray-800 mb-2 text-center">No Workouts Scheduled</h3>
+              <p className="text-gray-500 text-sm text-center">
+                {userId ? "No workouts logged for today." : "No workouts scheduled for today."}
+              </p>
+            </div>
+          ) : (
+            exercises.map((exercise) => (
+              <WorkoutCard
+                key={exercise.id}
+                exercise={exercise}
+                onToggle={(file) => handleToggleComplete(exercise, file)}
+              />
+            ))
+          )}
         </div>
       </div>
     </div>
