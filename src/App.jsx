@@ -2,7 +2,6 @@ import { Navigate, Outlet, Route, Routes } from 'react-router-dom'
 import Layout from './components/Layout'
 import ProtectedRoute from './components/ProtectedRoute'
 import PublicRoute from './components/PublicRoute'
-import PWAInstallPrompt from './components/PWAInstallPrompt'
 import { AuthProvider } from './context/AuthContext'
 import Dashboard from './pages/Dashboard'
 import DietTracker from './pages/DietTracker'
@@ -31,7 +30,6 @@ import TrainerDietPlanBuilder from './pages/TrainerDietPlanBuilder'
 function App() {
   return (
     <AuthProvider>
-      <PWAInstallPrompt />
       <Routes>
         {/* Public Routes - Only accessible when NOT logged in */}
         <Route

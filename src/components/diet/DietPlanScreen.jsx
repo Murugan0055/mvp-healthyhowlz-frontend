@@ -4,6 +4,7 @@ import { useNavigate, useParams } from 'react-router-dom';
 import api from '../../utils/api';
 import DietMealCard from './DietMealCard';
 import DietVersionModal from './DietVersionModal';
+import Skeleton from '../ui/Skeleton';
 
 const DietPlanScreen = () => {
   const navigate = useNavigate();
@@ -85,13 +86,6 @@ const DietPlanScreen = () => {
     calories: acc.calories + Number(meal.calories_kcal || 0),
   }), { protein: 0, carbs: 0, fat: 0, calories: 0 });
 
-  if (loading && !currentPlan) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50">
-        <Loader2 className="animate-spin text-indigo-600" size={32} />
-      </div>
-    );
-  }
 
   return (
     <div className="min-h-screen bg-gray-50 pb-10">
@@ -99,7 +93,13 @@ const DietPlanScreen = () => {
       <div className="bg-white sticky top-0 z-10 border-b border-gray-100 shadow-sm">
         <div className="px-4 py-3 flex items-center gap-3">
           <button
-            onClick={() => navigate(-1)}
+            onClick={() => {
+              if (paramClientId) {
+                navigate(`/trainer/clients/${paramClientId}/diet`);
+              } else {
+                navigate(-1);
+              }
+            }}
             className="p-2 -ml-2 text-gray-600 hover:bg-gray-100 rounded-full transition-colors"
           >
             <ArrowLeft size={24} />
@@ -120,21 +120,25 @@ const DietPlanScreen = () => {
         </div>
 
         {/* Version Selector */}
-        {!error && currentPlan && (
+        {!error && (loading || currentPlan) && (
           <div className="px-4 pb-3">
-            <button
-              onClick={() => setIsModalOpen(true)}
-              className="flex items-center gap-2 bg-gray-100 hover:bg-gray-200 px-3 py-1.5 rounded-full text-sm font-medium text-gray-700 transition-colors w-fit"
-            >
-              <Calendar size={14} />
-              <span>
-                {currentPlan.followed_till
-                  ? `Past: ${new Date(currentPlan.followed_from).toLocaleDateString()} - ${new Date(currentPlan.followed_till).toLocaleDateString()}`
-                  : `Current · Since ${new Date(currentPlan.followed_from).toLocaleDateString()}`
-                }
-              </span>
-              <ChevronDown size={14} />
-            </button>
+            {loading && !currentPlan ? (
+              <Skeleton className="h-8 w-48 rounded-full" />
+            ) : currentPlan && (
+              <button
+                onClick={() => setIsModalOpen(true)}
+                className="flex items-center gap-2 bg-gray-100 hover:bg-gray-200 px-3 py-1.5 rounded-full text-sm font-medium text-gray-700 transition-colors w-fit"
+              >
+                <Calendar size={14} />
+                <span>
+                  {currentPlan.followed_till
+                    ? `Past: ${new Date(currentPlan.followed_from).toLocaleDateString()} - ${new Date(currentPlan.followed_till).toLocaleDateString()}`
+                    : `Current · Since ${new Date(currentPlan.followed_from).toLocaleDateString()}`
+                  }
+                </span>
+                <ChevronDown size={14} />
+              </button>
+            )}
           </div>
         )}
       </div>
@@ -158,41 +162,63 @@ const DietPlanScreen = () => {
           <>
             {/* Plan Info Card */}
             <div className="bg-gradient-to-br from-indigo-600 to-purple-700 rounded-2xl p-5 text-white shadow-lg relative overflow-hidden">
-              {currentPlan.followed_till && (
-                <div className="absolute top-3 right-3 bg-white/20 backdrop-blur-md px-2 py-1 rounded-lg text-xs font-bold text-white border border-white/20">
-                  Past Plan
+              {loading && !currentPlan ? (
+                <div className="space-y-4">
+                  <div className="space-y-2">
+                    <Skeleton className="h-8 w-48 bg-white/20" />
+                    <Skeleton className="h-4 w-full bg-white/10" />
+                  </div>
+                  <Skeleton className="h-16 w-full bg-white/10 rounded-xl" />
                 </div>
-              )}
-              <h2 className="text-xl font-bold mb-1 pr-16">{currentPlan.title}</h2>
-              <p className="text-indigo-100 text-sm mb-4 opacity-90">{currentPlan.description}</p>
+              ) : (
+                <>
+                  {currentPlan?.followed_till && (
+                    <div className="absolute top-3 right-3 bg-white/20 backdrop-blur-md px-2 py-1 rounded-lg text-xs font-bold text-white border border-white/20">
+                      Past Plan
+                    </div>
+                  )}
+                  <h2 className="text-xl font-bold mb-1 pr-16">{currentPlan?.title}</h2>
+                  <p className="text-indigo-100 text-sm mb-4 opacity-90">{currentPlan?.description}</p>
 
-              {/* Totals */}
-              <div className="flex justify-between items-center bg-white/10 backdrop-blur-md rounded-xl p-3">
-                <div className="text-center">
-                  <p className="text-xs text-indigo-200 mb-0.5">Protein</p>
-                  <p className="font-bold">{Math.round(totals.protein)}g</p>
-                </div>
-                <div className="w-px h-8 bg-white/20" />
-                <div className="text-center">
-                  <p className="text-xs text-indigo-200 mb-0.5">Carbs</p>
-                  <p className="font-bold">{Math.round(totals.carbs)}g</p>
-                </div>
-                <div className="w-px h-8 bg-white/20" />
-                <div className="text-center">
-                  <p className="text-xs text-indigo-200 mb-0.5">Fat</p>
-                  <p className="font-bold">{Math.round(totals.fat)}g</p>
-                </div>
-                <div className="w-px h-8 bg-white/20" />
-                <div className="text-center">
-                  <p className="text-xs text-indigo-200 mb-0.5">Calories</p>
-                  <p className="font-bold text-yellow-300">{Math.round(totals.calories)}</p>
-                </div>
-              </div>
+                  {/* Totals */}
+                  <div className="flex justify-between items-center bg-white/10 backdrop-blur-md rounded-xl p-3">
+                    <div className="text-center">
+                      <p className="text-xs text-indigo-200 mb-0.5">Protein</p>
+                      <p className="font-bold">{Math.round(totals?.protein || 0)}g</p>
+                    </div>
+                    <div className="w-px h-8 bg-white/20" />
+                    <div className="text-center">
+                      <p className="text-xs text-indigo-200 mb-0.5">Carbs</p>
+                      <p className="font-bold">{Math.round(totals?.carbs || 0)}g</p>
+                    </div>
+                    <div className="w-px h-8 bg-white/20" />
+                    <div className="text-center">
+                      <p className="text-xs text-indigo-200 mb-0.5">Fat</p>
+                      <p className="font-bold">{Math.round(totals?.fat || 0)}g</p>
+                    </div>
+                    <div className="w-px h-8 bg-white/20" />
+                    <div className="text-center">
+                      <p className="text-xs text-indigo-200 mb-0.5">Calories</p>
+                      <p className="font-bold text-yellow-300">{Math.round(totals?.calories || 0)}</p>
+                    </div>
+                  </div>
+                </>
+              )}
             </div>
 
             {/* Meals List */}
             <div className="space-y-4">
-              {currentPlan.meals && currentPlan.meals.length > 0 ? (
+              {loading && !currentPlan ? (
+                Array.from({ length: 3 }).map((_, i) => (
+                  <div key={i} className="bg-white p-4 rounded-xl shadow-sm border border-gray-100 flex gap-4">
+                    <Skeleton className="w-16 h-16 rounded-lg bg-gray-100" />
+                    <div className="flex-1 space-y-2">
+                      <Skeleton className="h-4 w-24 bg-gray-100" />
+                      <Skeleton className="h-3 w-48 bg-gray-100" />
+                    </div>
+                  </div>
+                ))
+              ) : currentPlan?.meals && currentPlan.meals.length > 0 ? (
                 currentPlan.meals.map((meal) => (
                   <DietMealCard key={meal.id} meal={meal} />
                 ))

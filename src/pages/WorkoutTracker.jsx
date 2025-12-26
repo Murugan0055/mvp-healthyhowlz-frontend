@@ -4,26 +4,15 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import api from '../utils/api';
 import WorkoutCard from '../components/workout/WorkoutCard';
+import Skeleton from '../components/ui/Skeleton';
 
 const WorkoutTracker = ({ userId }) => {
   const { user } = useAuth();
   const navigate = useNavigate();
   const [exercises, setExercises] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [isOffline, setIsOffline] = useState(!navigator.onLine);
   const [currentDate, setCurrentDate] = useState(new Date().toISOString().split('T')[0]);
 
-  // Monitor online/offline status
-  useEffect(() => {
-    const handleOnline = () => setIsOffline(false);
-    const handleOffline = () => setIsOffline(true);
-    window.addEventListener('online', handleOnline);
-    window.addEventListener('offline', handleOffline);
-    return () => {
-      window.removeEventListener('online', handleOnline);
-      window.removeEventListener('offline', handleOffline);
-    };
-  }, []);
 
   // Load workouts
   useEffect(() => {
@@ -43,7 +32,7 @@ const WorkoutTracker = ({ userId }) => {
       }
     };
     loadWorkouts();
-  }, [currentDate, isOffline, userId]);
+  }, [currentDate, userId]);
 
   const handleToggleComplete = async (exercise, file = null) => {
     if (userId) return; // Trainer cannot toggle completion for client yet
@@ -88,7 +77,7 @@ const WorkoutTracker = ({ userId }) => {
   const progress = totalCount > 0 ? (completedCount / totalCount) * 100 : 0;
 
   return (
-    <div className={`min-h-screen bg-gradient-to-b from-gray-50 to-white ${userId ? '' : 'pb-28'}`}>
+    <div className={`min-h-screen bg-gray-50 flex flex-col ${userId ? '' : 'pb-24'}`}>
       {/* Header with Gradient - Hide for Trainer View */}
       {!userId && (
         <div className="bg-gradient-to-br from-blue-600 via-cyan-600 to-teal-500 px-6 pt-12 pb-8 rounded-b-[2rem] shadow-xl">
@@ -150,58 +139,58 @@ const WorkoutTracker = ({ userId }) => {
         </div>
       )}
 
-      {/* Offline Indicator */}
-      {isOffline && (
-        <div className="mx-4 mt-4 bg-amber-50 border border-amber-200 rounded-xl p-3 flex items-center gap-3">
-          <WifiOff size={18} className="text-amber-600 flex-shrink-0" />
-          <p className="text-sm font-medium text-amber-900">Offline - Changes may not save</p>
-        </div>
-      )}
 
       {/* Workout List */}
       <div className={`px-4 ${userId ? 'mt-0' : 'mt-6'} space-y-3`}>
         {/* Trainer View: Add "Create/Edit Workout Plan" button */}
         {userId && (
-          <div className="mb-4">
-            <button className="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 rounded-xl shadow-md transition-all">
+          <div className="mb-6">
+            <button className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-5 rounded-2xl shadow-lg shadow-blue-500/20 transition-all flex items-center justify-center gap-2 text-sm active:scale-95">
+              <Dumbbell size={20} />
               Create/Edit Workout Plan
             </button>
           </div>
         )}
 
-        {loading ? (
-          // Skeleton Loading
-          Array.from({ length: 3 }).map((_, idx) => (
-            <div key={idx} className="bg-white p-4 rounded-2xl shadow-sm border border-gray-100 animate-pulse">
-              <div className="flex gap-4">
-                <div className="w-12 h-12 bg-gray-200 rounded-xl flex-shrink-0" />
-                <div className="flex-1 space-y-2">
-                  <div className="h-4 bg-gray-200 rounded w-1/3" />
-                  <div className="h-3 bg-gray-200 rounded w-2/3" />
+        {/* Workout List Area */}
+        <div className="flex-1 flex flex-col px-4 mt-6">
+          <div className="space-y-3 flex-1 overflow-y-auto pb-4 flex flex-col justify-center items-center">
+
+            {loading ? (
+              // Skeleton Loading
+              Array.from({ length: 3 }).map((_, idx) => (
+                <div key={idx} className="bg-white p-4 rounded-2xl shadow-sm border border-gray-100">
+                  <div className="flex gap-4">
+                    <Skeleton className="w-12 h-12 rounded-xl flex-shrink-0" />
+                    <div className="flex-1 space-y-2">
+                      <Skeleton className="h-4 w-1/3" />
+                      <Skeleton className="h-3 w-2/3" />
+                    </div>
+                  </div>
                 </div>
+              ))
+            ) : exercises.length === 0 ? (
+              <div className="flex-1 flex flex-col items-center justify-center py-10">
+                <div className="w-20 h-20 bg-gradient-to-br from-blue-100 to-cyan-100 rounded-3xl flex items-center justify-center mb-4 shadow-lg">
+                  <Dumbbell size={36} className="text-blue-500" />
+                </div>
+                <h3 className="text-xl font-bold text-gray-800 mb-2 text-center">No Workouts Scheduled</h3>
+                <p className="text-gray-500 text-sm text-center">
+                  {userId ? "No workouts logged for today." : "No workouts scheduled for today."}
+                </p>
               </div>
-            </div>
-          ))
-        ) : exercises.length === 0 ? (
-          <div className="text-center py-16">
-            <div className="w-20 h-20 bg-gradient-to-br from-blue-100 to-cyan-100 rounded-3xl flex items-center justify-center mx-auto mb-4 shadow-lg">
-              <Dumbbell size={36} className="text-blue-500" />
-            </div>
-            <h3 className="text-xl font-bold text-gray-800 mb-2">Rest Day</h3>
-            <p className="text-gray-500 text-sm">
-              {userId ? "No workouts scheduled for today." : "No workouts scheduled for today."}
-            </p>
+            ) : (
+              exercises.map((exercise) => (
+                <WorkoutCard
+                  key={exercise.id}
+                  exercise={exercise}
+                  onToggle={(file) => handleToggleComplete(exercise, file)}
+                  readOnly={!!userId} // Pass readOnly prop if userId is present
+                />
+              ))
+            )}
           </div>
-        ) : (
-          exercises.map((exercise) => (
-            <WorkoutCard
-              key={exercise.id}
-              exercise={exercise}
-              onToggle={(file) => handleToggleComplete(exercise, file)}
-              readOnly={!!userId} // Pass readOnly prop if userId is present
-            />
-          ))
-        )}
+        </div>
       </div>
     </div>
   );

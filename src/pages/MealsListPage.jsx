@@ -90,7 +90,13 @@ const MealsListPage = () => {
       <div className="sticky top-0 bg-white/95 backdrop-blur-lg z-10 border-b border-gray-100 shadow-sm">
         <div className="px-4 py-4 flex items-center justify-between">
           <button
-            onClick={() => navigate(-1)}
+            onClick={() => {
+              if (clientId) {
+                navigate(`/trainer/clients/${clientId}/diet`);
+              } else {
+                navigate('/diet');
+              }
+            }}
             className="p-2 -ml-2 text-gray-600 hover:bg-gray-100 rounded-full transition-colors active:scale-95"
             aria-label="Go back"
           >
