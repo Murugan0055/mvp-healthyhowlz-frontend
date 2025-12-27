@@ -1,6 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { ArrowLeft, Plus, Trash2, Save, Loader2, Info, Flame, Apple, Coffee, Utensils, UtensilsCrossed, Dumbbell } from 'lucide-react';
+import {
+  ArrowLeft, Plus, Trash2, Save, Loader2, Info, Flame, Apple, Coffee,
+  Utensils, UtensilsCrossed, Dumbbell, Sparkles, Camera, BookOpen
+} from 'lucide-react';
 import api from '../utils/api';
 import { Button } from '../components/ui/Button';
 
@@ -19,6 +22,9 @@ const TrainerDietPlanBuilder = () => {
   const [clientName, setClientName] = useState('');
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [analyzing, setAnalyzing] = useState(false);
+  const [templates, setTemplates] = useState([]);
+  const [showTemplates, setShowTemplates] = useState(false);
   const [error, setError] = useState(null);
 
   const [planData, setPlanData] = useState({
@@ -32,7 +38,77 @@ const TrainerDietPlanBuilder = () => {
 
   useEffect(() => {
     fetchClientName();
+    fetchTemplates();
   }, [clientId]);
+
+  const fetchTemplates = async () => {
+    try {
+      const res = await api.get('/templates/diet');
+      setTemplates(res.data);
+    } catch (err) {
+      console.error('Failed to fetch templates', err);
+    }
+  };
+
+  const loadTemplate = async (templateId) => {
+    setLoading(true);
+    try {
+      const res = await api.get(`/templates/diet/${templateId}`);
+      setPlanData({
+        ...planData,
+        title: res.data.name,
+        description: res.data.description,
+        meals: res.data.meals.map(m => ({
+          meal_type: m.meal_type,
+          name: m.name,
+          description: m.description,
+          protein_g: m.protein_g.toString(),
+          carbs_g: m.carbs_g.toString(),
+          fat_g: m.fat_g.toString(),
+          calories_kcal: m.calories_kcal.toString()
+        }))
+      });
+      setShowTemplates(false);
+    } catch (err) {
+      console.error('Failed to load template', err);
+      setError('Failed to load template');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleImageUpload = async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onloadend = async () => {
+      const base64String = reader.result;
+      setAnalyzing(true);
+      setError(null);
+      try {
+        const res = await api.post('/ai/extract-plan', { image: base64String, type: 'diet' });
+        setPlanData({
+          ...planData,
+          title: res.data.title || planData.title,
+          description: res.data.description || planData.description,
+          meals: res.data.meals.map(m => ({
+            ...m,
+            protein_g: m.protein_g.toString(),
+            carbs_g: m.carbs_g.toString(),
+            fat_g: m.fat_g.toString(),
+            calories_kcal: m.calories_kcal.toString()
+          }))
+        });
+      } catch (err) {
+        console.error('Extraction failed:', err);
+        setError('Failed to extract data from image.');
+      } finally {
+        setAnalyzing(false);
+      }
+    };
+    reader.readAsDataURL(file);
+  };
 
   const fetchClientName = async () => {
     try {
@@ -106,7 +182,7 @@ const TrainerDietPlanBuilder = () => {
   }), { p: 0, c: 0, f: 0, cal: 0 });
 
   return (
-    <div className="min-h-screen bg-gray-50 pb-24">
+    <div className="min-h-screen bg-gray-50 pb-48">
       {/* Header */}
       <div className="bg-white sticky top-0 z-10 border-b border-gray-100 shadow-sm">
         <div className="px-4 py-4 flex items-center gap-3">
@@ -116,9 +192,9 @@ const TrainerDietPlanBuilder = () => {
           >
             <ArrowLeft size={24} />
           </button>
-          <div className="flex-1">
-            <h1 className="text-lg font-bold text-gray-900">Create Diet Plan</h1>
-            <p className="text-xs text-gray-500 font-medium">For {clientName || 'Client'}</p>
+          <div className="flex-1 min-w-0">
+            <h1 className="text-base font-bold text-gray-900 truncate">Create Diet Plan</h1>
+            <p className="text-[11px] text-gray-500 font-medium truncate">For {clientName || 'Client'}</p>
           </div>
           <Button
             onClick={handleSave}
@@ -133,6 +209,61 @@ const TrainerDietPlanBuilder = () => {
       </div>
 
       <div className="p-4 space-y-6">
+        {/* Quick Actions */}
+        <div className="grid grid-cols-2 gap-3">
+          <div className="relative">
+            <input
+              type="file"
+              accept="image/*"
+              onChange={handleImageUpload}
+              className="absolute inset-0 opacity-0 cursor-pointer z-10"
+              disabled={analyzing}
+            />
+            <div className="h-14 bg-indigo-600 text-white rounded-2xl flex items-center justify-center gap-2 shadow-lg shadow-indigo-200 active:scale-95 transition-all">
+              {analyzing ? <Loader2 size={18} className="animate-spin" /> : <Camera size={18} />}
+              <span className="font-bold text-sm">Scan Plan</span>
+            </div>
+          </div>
+
+          <button
+            onClick={() => setShowTemplates(!showTemplates)}
+            className="h-14 bg-white text-indigo-600 border-2 border-indigo-100 rounded-2xl flex items-center justify-center gap-2 shadow-sm active:scale-95 transition-all"
+          >
+            <BookOpen size={18} />
+            <span className="font-bold text-sm">Library</span>
+          </button>
+        </div>
+
+        {/* Template List Modal/Overlay */}
+        {showTemplates && (
+          <div className="bg-white rounded-3xl p-6 shadow-xl border border-indigo-100 animate-in zoom-in-95 duration-200">
+            <div className="flex justify-between items-center mb-4">
+              <h3 className="font-bold text-gray-900">Select Template</h3>
+              <button onClick={() => setShowTemplates(false)} className="text-gray-400 p-1">
+                <X size={20} />
+              </button>
+            </div>
+            <div className="max-h-60 overflow-y-auto space-y-2 pr-2">
+              {templates.length === 0 ? (
+                <p className="text-center text-gray-500 py-4">No templates found in library</p>
+              ) : (
+                templates.map(t => (
+                  <button
+                    key={t.id}
+                    onClick={() => loadTemplate(t.id)}
+                    className="w-full text-left p-3 rounded-xl hover:bg-indigo-50 border border-gray-100 transition-colors flex justify-between items-center group"
+                  >
+                    <div>
+                      <p className="font-bold text-gray-800 group-hover:text-indigo-600">{t.name}</p>
+                      <p className="text-xs text-gray-500">{t.meals_count || t.meals?.length || 0} meals</p>
+                    </div>
+                    <Plus size={16} className="text-gray-300 group-hover:text-indigo-500" />
+                  </button>
+                ))
+              )}
+            </div>
+          </div>
+        )}
         {/* Plan Basics */}
         <div className="bg-white rounded-2xl p-6 shadow-lg border border-gray-100 space-y-6">
           <div>
@@ -174,22 +305,22 @@ const TrainerDietPlanBuilder = () => {
         {/* Totals Summary */}
         <div className="bg-gradient-to-br from-indigo-600 to-purple-700 rounded-2xl p-5 text-white shadow-lg">
           <h3 className="text-sm font-bold mb-3 opacity-90">Daily Totals</h3>
-          <div className="grid grid-cols-4 gap-2">
-            <div className="text-center">
+          <div className="grid grid-cols-2 xs:grid-cols-4 gap-2">
+            <div className="text-center min-w-0">
               <p className="text-[10px] text-indigo-200 uppercase font-bold">Protein</p>
-              <p className="text-lg font-bold">{totalMacros.p}g</p>
+              <p className="text-base sm:text-lg font-bold truncate">{totalMacros.p}g</p>
             </div>
-            <div className="text-center">
+            <div className="text-center min-w-0">
               <p className="text-[10px] text-indigo-200 uppercase font-bold">Carbs</p>
-              <p className="text-lg font-bold">{totalMacros.c}g</p>
+              <p className="text-base sm:text-lg font-bold truncate">{totalMacros.c}g</p>
             </div>
-            <div className="text-center">
+            <div className="text-center min-w-0">
               <p className="text-[10px] text-indigo-200 uppercase font-bold">Fat</p>
-              <p className="text-lg font-bold">{totalMacros.f}g</p>
+              <p className="text-base sm:text-lg font-bold truncate">{totalMacros.f}g</p>
             </div>
-            <div className="text-center">
+            <div className="text-center min-w-0">
               <p className="text-[10px] text-indigo-200 uppercase font-bold">Calories</p>
-              <p className="text-lg font-bold text-yellow-300">{totalMacros.cal}</p>
+              <p className="text-base sm:text-lg font-bold text-yellow-300 truncate">{totalMacros.cal}</p>
             </div>
           </div>
         </div>
@@ -251,41 +382,53 @@ const TrainerDietPlanBuilder = () => {
                 />
               </div>
 
-              <div className="grid grid-cols-4 gap-3">
-                <div>
-                  <label className="block text-[10px] font-bold text-gray-500 uppercase tracking-wider mb-2">Prot(g)</label>
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 bg-gray-50/50 p-4 rounded-2xl border border-gray-100">
+                <div className="relative">
+                  <label className="flex items-center gap-1.5 text-[10px] font-black text-blue-600 uppercase tracking-widest pl-1 mb-1.5">
+                    Prot <span className="text-[8px] opacity-60">(g)</span>
+                  </label>
                   <input
                     type="number"
                     value={meal.protein_g}
                     onChange={(e) => handleMealChange(index, 'protein_g', e.target.value)}
-                    className="w-full h-12 rounded-xl border-2 border-gray-200 bg-white px-2 text-center text-base font-bold text-blue-600 focus:ring-2 focus:ring-indigo-500 outline-none transition-all"
+                    className="w-full h-14 rounded-2xl border-2 border-white bg-white px-3 text-lg font-black text-blue-900 shadow-sm focus:ring-2 focus:ring-blue-500 outline-none transition-all placeholder:text-gray-300"
+                    placeholder="0"
                   />
                 </div>
-                <div>
-                  <label className="block text-[10px] font-bold text-gray-500 uppercase tracking-wider mb-2">Carb(g)</label>
+                <div className="relative">
+                  <label className="flex items-center gap-1.5 text-[10px] font-black text-green-600 uppercase tracking-widest pl-1 mb-1.5">
+                    Carb <span className="text-[8px] opacity-60">(g)</span>
+                  </label>
                   <input
                     type="number"
                     value={meal.carbs_g}
                     onChange={(e) => handleMealChange(index, 'carbs_g', e.target.value)}
-                    className="w-full h-12 rounded-xl border-2 border-gray-200 bg-white px-2 text-center text-base font-bold text-green-600 focus:ring-2 focus:ring-indigo-500 outline-none transition-all"
+                    className="w-full h-14 rounded-2xl border-2 border-white bg-white px-3 text-lg font-black text-green-900 shadow-sm focus:ring-2 focus:ring-green-500 outline-none transition-all placeholder:text-gray-300"
+                    placeholder="0"
                   />
                 </div>
-                <div>
-                  <label className="block text-[10px] font-bold text-gray-500 uppercase tracking-wider mb-2">Fat(g)</label>
+                <div className="relative">
+                  <label className="flex items-center gap-1.5 text-[10px] font-black text-purple-600 uppercase tracking-widest pl-1 mb-1.5">
+                    Fat <span className="text-[8px] opacity-60">(g)</span>
+                  </label>
                   <input
                     type="number"
                     value={meal.fat_g}
                     onChange={(e) => handleMealChange(index, 'fat_g', e.target.value)}
-                    className="w-full h-12 rounded-xl border-2 border-gray-200 bg-white px-2 text-center text-base font-bold text-purple-600 focus:ring-2 focus:ring-indigo-500 outline-none transition-all"
+                    className="w-full h-14 rounded-2xl border-2 border-white bg-white px-3 text-lg font-black text-purple-900 shadow-sm focus:ring-2 focus:ring-purple-500 outline-none transition-all placeholder:text-gray-300"
+                    placeholder="0"
                   />
                 </div>
-                <div>
-                  <label className="block text-[10px] font-bold text-gray-500 uppercase tracking-wider mb-2">Kcal</label>
+                <div className="relative">
+                  <label className="flex items-center gap-1.5 text-[10px] font-black text-orange-600 uppercase tracking-widest pl-1 mb-1.5">
+                    Kcal <span className="text-[8px] opacity-60">(cal)</span>
+                  </label>
                   <input
                     type="number"
                     value={meal.calories_kcal}
                     onChange={(e) => handleMealChange(index, 'calories_kcal', e.target.value)}
-                    className="w-full h-12 rounded-xl border-2 border-gray-200 bg-white px-2 text-center text-base font-bold text-orange-600 focus:ring-2 focus:ring-indigo-500 outline-none transition-all"
+                    className="w-full h-14 rounded-2xl border-2 border-white bg-white px-3 text-lg font-black text-orange-900 shadow-sm focus:ring-2 focus:ring-orange-500 outline-none transition-all placeholder:text-gray-300"
+                    placeholder="0"
                   />
                 </div>
               </div>
@@ -311,7 +454,7 @@ const TrainerDietPlanBuilder = () => {
       </div>
 
       {/* Bottom Action Bar */}
-      <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-100 p-4 shadow-[0_-4px_20px_rgba(0,0,0,0.05)]">
+      <div className="fixed bottom-20 left-0 right-0 bg-white/80 backdrop-blur-md border-t border-gray-100 p-4 shadow-[0_-4px_20px_rgba(0,0,0,0.05)] z-30">
         <Button
           onClick={handleSave}
           disabled={saving}

@@ -27,6 +27,8 @@ import TrainerLayout from './components/TrainerLayout'
 import TrainerLibrary from './pages/TrainerLibrary'
 import TrainerDietPlanBuilder from './pages/TrainerDietPlanBuilder'
 import TrainerWorkoutPlanBuilder from './pages/TrainerWorkoutPlanBuilder'
+import TrainerDietTemplateBuilder from './pages/TrainerDietTemplateBuilder'
+import TrainerWorkoutTemplateBuilder from './pages/TrainerWorkoutTemplateBuilder'
 
 function App() {
   return (
@@ -123,6 +125,10 @@ function App() {
           <Route path="clients/:clientId/workout/all" element={<WorkoutListPage />} />
 
           <Route path="library" element={<TrainerLibrary />} />
+          <Route path="library/diet/new" element={<TrainerDietTemplateBuilder />} />
+          <Route path="library/diet/template/:templateId" element={<TrainerDietTemplateBuilder />} />
+          <Route path="library/workout/new" element={<TrainerWorkoutTemplateBuilder />} />
+          <Route path="library/workout/template/:templateId" element={<TrainerWorkoutTemplateBuilder />} />
           <Route path="profile" element={<Profile />} />
         </Route>
 

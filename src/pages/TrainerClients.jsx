@@ -43,17 +43,17 @@ const TrainerClients = () => {
     <div className="min-h-screen bg-gradient-to-b from-gray-50 to-white pb-28">
       {/* Header with Gradient */}
       <div className="bg-gradient-to-br from-indigo-600 via-purple-600 to-pink-500 px-6 pt-6 pb-20 rounded-b-[2.5rem] shadow-xl">
-        <div className="flex justify-between items-start mb-6">
-          <div className="flex-1">
-            <h1 className="text-2xl font-bold text-white mb-1">My Clients</h1>
-            <p className="text-indigo-100 text-sm font-medium">
-              Manage your athletes and their progress
-            </p>
+        <div className="mb-6">
+          <div className="flex justify-between items-center mb-2 gap-4">
+            <h1 className="text-2xl font-black text-white whitespace-nowrap">My Clients</h1>
+            <div className="flex-shrink-0 bg-white/20 backdrop-blur-md text-white px-3 py-1.5 rounded-full text-[10px] font-black uppercase tracking-wider flex items-center gap-1.5 shadow-lg border border-white/10">
+              <User size={14} className="fill-white" />
+              {activeCount} Active
+            </div>
           </div>
-          <div className="bg-white/20 backdrop-blur-md text-white px-4 py-2 rounded-full text-sm font-bold flex items-center gap-2 shadow-lg ml-3">
-            <User size={16} className="fill-white" />
-            {activeCount} Active
-          </div>
+          <p className="text-indigo-100 text-sm font-medium leading-relaxed opacity-90">
+            Manage your athletes and their progress
+          </p>
         </div>
 
         {/* Search & Filter Bar */}

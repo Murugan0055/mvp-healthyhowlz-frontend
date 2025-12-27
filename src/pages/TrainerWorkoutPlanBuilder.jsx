@@ -1,6 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { ArrowLeft, Plus, Trash2, Save, Loader2, Info, Dumbbell, Clock, ListChecks } from 'lucide-react';
+import {
+  ArrowLeft, Plus, Trash2, Save, Loader2, Info, Dumbbell, Clock,
+  ListChecks, Sparkles, Camera, BookOpen, X
+} from 'lucide-react';
 import api from '../utils/api';
 import { Button } from '../components/ui/Button';
 
@@ -21,6 +24,9 @@ const TrainerWorkoutPlanBuilder = () => {
   const [clientName, setClientName] = useState('');
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [analyzing, setAnalyzing] = useState(false);
+  const [templates, setTemplates] = useState([]);
+  const [showTemplates, setShowTemplates] = useState(false);
   const [error, setError] = useState(null);
 
   const [planData, setPlanData] = useState({
@@ -34,7 +40,77 @@ const TrainerWorkoutPlanBuilder = () => {
 
   useEffect(() => {
     fetchClientName();
+    fetchTemplates();
   }, [clientId]);
+
+  const fetchTemplates = async () => {
+    try {
+      const res = await api.get('/templates/workout');
+      setTemplates(res.data);
+    } catch (err) {
+      console.error('Failed to fetch templates', err);
+    }
+  };
+
+  const loadTemplate = async (templateId) => {
+    setLoading(true);
+    try {
+      const res = await api.get(`/templates/workout/${templateId}`);
+      setPlanData({
+        ...planData,
+        title: res.data.name,
+        description: res.data.description,
+        exercises: res.data.exercises.map(ex => ({
+          day_name: ex.day_name,
+          name: ex.name,
+          category: ex.category || 'STRENGTH',
+          sets: ex.sets?.toString() || '',
+          reps: ex.reps?.toString() || '',
+          duration: ex.duration?.toString() || '',
+          notes: ex.notes || ''
+        }))
+      });
+      setShowTemplates(false);
+    } catch (err) {
+      console.error('Failed to load template', err);
+      setError('Failed to load template');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleImageUpload = async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onloadend = async () => {
+      const base64String = reader.result;
+      setAnalyzing(true);
+      setError(null);
+      try {
+        const res = await api.post('/ai/extract-plan', { image: base64String, type: 'workout' });
+        setPlanData({
+          ...planData,
+          title: res.data.title || planData.title,
+          description: res.data.description || planData.description,
+          exercises: res.data.exercises.map(ex => ({
+            ...ex,
+            sets: ex.sets?.toString() || '',
+            reps: ex.reps?.toString() || '',
+            duration: ex.duration?.toString() || '',
+            notes: ex.notes || ''
+          }))
+        });
+      } catch (err) {
+        console.error('Extraction failed:', err);
+        setError('Failed to extract data from image.');
+      } finally {
+        setAnalyzing(false);
+      }
+    };
+    reader.readAsDataURL(file);
+  };
 
   const fetchClientName = async () => {
     try {
@@ -92,7 +168,7 @@ const TrainerWorkoutPlanBuilder = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 pb-24">
+    <div className="min-h-screen bg-gray-50 pb-48">
       {/* Header */}
       <div className="bg-white sticky top-0 z-10 border-b border-gray-100 shadow-sm">
         <div className="px-4 py-4 flex items-center gap-3">
@@ -102,9 +178,9 @@ const TrainerWorkoutPlanBuilder = () => {
           >
             <ArrowLeft size={24} />
           </button>
-          <div className="flex-1">
-            <h1 className="text-lg font-bold text-gray-900">Create Workout Plan</h1>
-            <p className="text-xs text-gray-500 font-medium">For {clientName || 'Client'}</p>
+          <div className="flex-1 min-w-0">
+            <h1 className="text-base font-bold text-gray-900 truncate">Create Workout Plan</h1>
+            <p className="text-[11px] text-gray-500 font-medium truncate">For {clientName || 'Client'}</p>
           </div>
           <Button
             onClick={handleSave}
@@ -119,6 +195,61 @@ const TrainerWorkoutPlanBuilder = () => {
       </div>
 
       <div className="p-4 space-y-6">
+        {/* Quick Actions */}
+        <div className="grid grid-cols-2 gap-3">
+          <div className="relative">
+            <input
+              type="file"
+              accept="image/*"
+              onChange={handleImageUpload}
+              className="absolute inset-0 opacity-0 cursor-pointer z-10"
+              disabled={analyzing}
+            />
+            <div className="h-14 bg-blue-600 text-white rounded-2xl flex items-center justify-center gap-2 shadow-lg shadow-blue-200 active:scale-95 transition-all">
+              {analyzing ? <Loader2 size={18} className="animate-spin" /> : <Camera size={18} />}
+              <span className="font-bold text-sm">Scan Routine</span>
+            </div>
+          </div>
+
+          <button
+            onClick={() => setShowTemplates(!showTemplates)}
+            className="h-14 bg-white text-blue-600 border-2 border-blue-100 rounded-2xl flex items-center justify-center gap-2 shadow-sm active:scale-95 transition-all"
+          >
+            <BookOpen size={18} />
+            <span className="font-bold text-sm">Library</span>
+          </button>
+        </div>
+
+        {/* Template List Modal/Overlay */}
+        {showTemplates && (
+          <div className="bg-white rounded-3xl p-6 shadow-xl border border-blue-100 animate-in zoom-in-95 duration-200">
+            <div className="flex justify-between items-center mb-4">
+              <h3 className="font-bold text-gray-900">Select Template</h3>
+              <button onClick={() => setShowTemplates(false)} className="text-gray-400 p-1">
+                <X size={20} />
+              </button>
+            </div>
+            <div className="max-h-60 overflow-y-auto space-y-2 pr-2">
+              {templates.length === 0 ? (
+                <p className="text-center text-gray-500 py-4">No templates found in library</p>
+              ) : (
+                templates.map(t => (
+                  <button
+                    key={t.id}
+                    onClick={() => loadTemplate(t.id)}
+                    className="w-full text-left p-3 rounded-xl hover:bg-blue-50 border border-gray-100 transition-colors flex justify-between items-center group"
+                  >
+                    <div>
+                      <p className="font-bold text-gray-800 group-hover:text-blue-600">{t.name}</p>
+                      <p className="text-xs text-gray-500">{t.exercises_count || t.exercises?.length || 0} exercises</p>
+                    </div>
+                    <Plus size={16} className="text-gray-300 group-hover:text-blue-500" />
+                  </button>
+                ))
+              )}
+            </div>
+          </div>
+        )}
         {/* Plan Basics */}
         <div className="bg-white rounded-2xl p-6 shadow-lg border border-gray-100 space-y-6">
           <div>
@@ -288,7 +419,7 @@ const TrainerWorkoutPlanBuilder = () => {
       </div>
 
       {/* Bottom Action Bar */}
-      <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-100 p-4 shadow-[0_-4px_20px_rgba(0,0,0,0.05)]">
+      <div className="fixed bottom-20 left-0 right-0 bg-white/80 backdrop-blur-md border-t border-gray-100 p-4 shadow-[0_-4px_20px_rgba(0,0,0,0.05)] z-30">
         <Button
           onClick={handleSave}
           disabled={saving}
