@@ -18,6 +18,7 @@ import WorkoutListPage from './pages/WorkoutListPage'
 import Profile from './pages/Profile'
 import BodyMetrics from './pages/BodyMetrics'
 import BodyMeasurements from './pages/BodyMeasurements'
+import ClientSessions from './pages/ClientSessions'
 import TrainerLanding from './pages/TrainerLanding'
 import GymOwnerLanding from './pages/GymOwnerLanding'
 import TrainerClients from './pages/TrainerClients'
@@ -29,6 +30,8 @@ import TrainerDietPlanBuilder from './pages/TrainerDietPlanBuilder'
 import TrainerWorkoutPlanBuilder from './pages/TrainerWorkoutPlanBuilder'
 import TrainerDietTemplateBuilder from './pages/TrainerDietTemplateBuilder'
 import TrainerWorkoutTemplateBuilder from './pages/TrainerWorkoutTemplateBuilder'
+import TrainerSessions from './pages/TrainerSessions'
+import TrainerAddSession from './pages/TrainerAddSession'
 
 function App() {
   return (
@@ -98,6 +101,7 @@ function App() {
           <Route path="profile" element={<Profile />} />
           <Route path="profile/body-metrics" element={<BodyMetrics />} />
           <Route path="profile/body-measurements" element={<BodyMeasurements />} />
+          <Route path="sessions" element={<ClientSessions />} />
         </Route >
 
         {/* Trainer Routes */}
@@ -111,6 +115,8 @@ function App() {
         >
           <Route index element={<TrainerLanding />} />
           <Route path="clients" element={<TrainerClients />} />
+          <Route path="sessions" element={<TrainerSessions />} />
+          <Route path="sessions/add" element={<TrainerAddSession />} />
           <Route path="clients/add" element={<TrainerAddClient />} />
           <Route path="clients/:clientId" element={<TrainerClientDetail />} />
 

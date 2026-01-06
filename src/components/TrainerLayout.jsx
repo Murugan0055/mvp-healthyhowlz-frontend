@@ -1,5 +1,5 @@
 import clsx from 'clsx';
-import { Book, Home, Users, User } from 'lucide-react';
+import { Book, Home, Users, User, Calendar } from 'lucide-react';
 import { Link, Outlet, useLocation } from 'react-router-dom';
 
 const TrainerLayout = () => {
@@ -8,13 +8,14 @@ const TrainerLayout = () => {
   const navItems = [
     { path: '/trainer', icon: Home, label: 'Dashboard', exact: true },
     { path: '/trainer/clients', icon: Users, label: 'Clients' },
+    { path: '/trainer/sessions', icon: Calendar, label: 'Sessions' },
     { path: '/trainer/library', icon: Book, label: 'Library' },
     { path: '/trainer/profile', icon: User, label: 'Profile' },
   ];
   const header = <header className="bg-white shadow-sm p-4 flex justify-between items-center sticky top-0 z-10">
     <h1 className="text-xl font-bold text-indigo-600">Trainer App</h1>
   </header>;
-  const isHeaderNeeded = location.pathname === '/trainer/clients' || location.pathname === '/trainer/library' || location.pathname === '/trainer/profile' || location.pathname === '/trainer';
+  const isHeaderNeeded = location.pathname.startsWith('/trainer');
   return (
     <div className="min-h-screen flex flex-col bg-gray-50">
 

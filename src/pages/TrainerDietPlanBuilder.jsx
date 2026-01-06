@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import {
   ArrowLeft, Plus, Trash2, Save, Loader2, Info, Flame, Apple, Coffee,
-  Utensils, UtensilsCrossed, Dumbbell, Sparkles, Camera, BookOpen
+  Utensils, UtensilsCrossed, Dumbbell, Sparkles, Camera, BookOpen, X
 } from 'lucide-react';
 import api from '../utils/api';
 import { Button } from '../components/ui/Button';

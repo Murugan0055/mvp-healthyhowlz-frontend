@@ -47,46 +47,39 @@ const TrainerAddClient = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-gray-50 to-white pb-20">
-      {/* Header with Gradient */}
-      <div className="bg-gradient-to-br from-indigo-600 via-purple-600 to-pink-500 px-6 pt-8 pb-12 rounded-b-[2rem] shadow-xl relative">
-        <div className="relative flex items-center justify-center mb-6">
+    <div className="min-h-screen bg-gray-50 pb-20">
+      {/* Simple Header */}
+      <div className="bg-white sticky top-0 z-30 border-b border-gray-100 shadow-sm">
+        <div className="px-4 py-4 flex items-center gap-3">
           <button
             onClick={() => navigate('/trainer/clients')}
-            className="absolute left-0 bg-white/20 hover:bg-white/30 backdrop-blur-md text-white p-2.5 rounded-full transition-all"
+            className="p-2 -ml-2 text-gray-600 hover:bg-gray-100 rounded-full transition-colors"
           >
             <ChevronLeft size={24} />
           </button>
-          <h1 className="text-2xl font-bold text-white">Add New Client</h1>
-        </div>
-
-        {/* Profile Avatar Placeholder */}
-        <div className="flex flex-col items-center">
-          <div className="relative">
-            <div className="w-28 h-28 bg-white rounded-full flex items-center justify-center shadow-2xl overflow-hidden border-4 border-white/30">
+          <div className="flex-1 min-w-0">
+            <h1 className="text-base font-bold text-gray-900 truncate">Add New Client</h1>
+            <p className="text-[11px] text-gray-500 font-medium truncate">Create a new athlete profile</p>
+          </div>
+          <div className="relative group">
+            <div className="w-10 h-10 bg-gray-100 rounded-full flex items-center justify-center overflow-hidden border-2 border-white shadow-sm ring-1 ring-gray-100">
               {formData.profile_image_url ? (
                 <img src={formData.profile_image_url} alt="Profile" className="w-full h-full object-cover" />
               ) : (
-                <User size={48} className="text-gray-400" />
+                <User size={20} className="text-gray-400" />
               )}
             </div>
-            <label className="absolute bottom-0 right-0 bg-white text-indigo-600 p-2 rounded-full shadow-lg cursor-pointer hover:scale-110 transition-transform">
-              <Camera size={18} />
-              <input
-                type="file"
-                accept="image/*"
-                onChange={handleImageUpload}
-                className="hidden"
-              />
+            <label className="absolute -bottom-1 -right-1 bg-indigo-600 text-white p-1 rounded-full shadow-lg cursor-pointer hover:scale-110 transition-transform">
+              <Camera size={10} />
+              <input type="file" accept="image/*" onChange={handleImageUpload} className="hidden" />
             </label>
           </div>
-          <p className="text-indigo-100 text-sm mt-3 font-medium">Enter client details below</p>
         </div>
       </div>
 
       {/* Form Content */}
-      <div className="px-4 -mt-8 pb-10 relative z-10">
-        <div className="bg-white rounded-2xl shadow-lg p-6 border border-gray-100">
+      <div className="p-4 relative z-10">
+        <div className="bg-white rounded-3xl shadow-sm border border-gray-100 p-6">
           {error && (
             <div className="mb-6 p-4 bg-red-50 text-red-700 text-sm rounded-xl flex items-center gap-2">
               <span className="font-bold">Error:</span> {error}

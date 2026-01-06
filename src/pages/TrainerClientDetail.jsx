@@ -1,4 +1,4 @@
-import { ChevronLeft, Calendar, Dumbbell, Mail, Phone, User, CheckCircle2, ArrowLeft, Utensils } from 'lucide-react';
+import { ChevronLeft, Calendar, Dumbbell, Mail, Phone, User, CheckCircle2, ArrowLeft, Utensils, Activity } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import Profile from './Profile';
@@ -6,19 +6,29 @@ import DietTracker from './DietTracker';
 import WorkoutTracker from './WorkoutTracker';
 import api from '../utils/api';
 import Skeleton from '../components/ui/Skeleton';
+import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
+import { format } from 'date-fns';
 
 const TrainerClientDetail = () => {
   const { clientId } = useParams();
   const navigate = useNavigate();
   const [activeView, setActiveView] = useState('dashboard'); // 'dashboard', 'diet', 'workout'
   const [client, setClient] = useState(null);
+  const [progressData, setProgressData] = useState([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const fetchClientDetails = async () => {
       try {
-        const response = await api.get(`/trainer/clients/${clientId}`);
-        setClient(response.data);
+        const [clientRes, progressRes] = await Promise.all([
+          api.get(`/trainer/clients/${clientId}`),
+          api.get(`/trainer/clients/${clientId}/progress`)
+        ]);
+        setClient(clientRes.data);
+        setProgressData(progressRes.data.map(d => ({
+          ...d,
+          date: format(new Date(d.recorded_at), 'MMM d')
+        })));
       } catch (error) {
         console.error('Failed to fetch client details', error);
       } finally {
@@ -173,6 +183,47 @@ const TrainerClientDetail = () => {
               <h3 className="font-bold text-gray-900">Workout Plan</h3>
               <p className="text-xs text-gray-500">Track exercises</p>
             </div>
+          </div>
+        </div>
+
+        {/* Progress Chart */}
+        <div className="bg-white rounded-3xl shadow-sm border border-gray-100 p-6">
+          <h3 className="font-bold text-gray-900 mb-4 flex items-center gap-2">
+            <Activity size={18} className="text-indigo-600" />
+            Weight Trend
+          </h3>
+          <div className="h-48 w-full">
+            {progressData.length > 1 ? (
+              <ResponsiveContainer width="100%" height="100%">
+                <AreaChart data={progressData}>
+                  <defs>
+                    <linearGradient id="colorWeight" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="5%" stopColor="#6366f1" stopOpacity={0.1} />
+                      <stop offset="95%" stopColor="#6366f1" stopOpacity={0} />
+                    </linearGradient>
+                  </defs>
+                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f0f0f0" />
+                  <XAxis dataKey="date" axisLine={false} tickLine={false} tick={{ fontSize: 10, fill: '#9ca3af' }} />
+                  <YAxis hide domain={['auto', 'auto']} />
+                  <Tooltip
+                    contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}
+                    labelStyle={{ fontWeight: 'bold', color: '#1f2937' }}
+                  />
+                  <Area
+                    type="monotone"
+                    dataKey="weight_kg"
+                    stroke="#6366f1"
+                    strokeWidth={3}
+                    fillOpacity={1}
+                    fill="url(#colorWeight)"
+                  />
+                </AreaChart>
+              </ResponsiveContainer>
+            ) : (
+              <div className="flex flex-col items-center justify-center h-full bg-gray-50 rounded-2xl border border-dashed border-gray-200 p-4">
+                <p className="text-gray-400 text-xs text-center font-medium">Insufficient data for trend chart. Add more body metrics to see progress.</p>
+              </div>
+            )}
           </div>
         </div>
 

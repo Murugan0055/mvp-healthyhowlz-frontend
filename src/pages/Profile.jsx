@@ -54,15 +54,21 @@ const Profile = ({ userId }) => {
         });
       } else {
         // Fetch current user data (Client View)
-        const [profileRes, metricsRes, measurementsRes] = await Promise.all([
-          api.get('/me/profile'),
-          api.get('/me/body-metrics/latest'),
-          api.get('/me/body-measurements/latest')
-        ]);
-
+        const profileRes = await api.get('/me/profile');
         setProfile(profileRes.data);
-        setLatestMetrics(metricsRes.data);
-        setLatestMeasurements(measurementsRes.data);
+
+        // Only fetch metrics/measurements if not a trainer
+        if (user?.role !== 'trainer') {
+          const [metricsRes, measurementsRes] = await Promise.all([
+            api.get('/me/body-metrics/latest'),
+            api.get('/me/body-measurements/latest')
+          ]);
+          setLatestMetrics(metricsRes.data);
+          setLatestMeasurements(measurementsRes.data);
+        } else {
+          setLatestMetrics(null);
+          setLatestMeasurements(null);
+        }
 
         setFormData({
           name: profileRes.data.name || '',
@@ -122,7 +128,7 @@ const Profile = ({ userId }) => {
     <div className={`min-h-screen bg-gradient-to-b from-gray-50 to-white ${userId ? '' : 'pb-20'}`}>
       {/* Header with Gradient - Hide if userId is present (Trainer View handles header) */}
       {!userId && (
-        <div className="bg-gradient-to-br from-indigo-600 via-purple-600 to-pink-500 px-6 pt-8 pb-12 rounded-b-[2rem] shadow-xl relative">
+        <div className="bg-gradient-to-br from-indigo-600 via-purple-600 to-pink-500 px-6 pt-8 pb-12 rounded-b-[2.5rem] shadow-xl relative">
           <div className="flex justify-between items-center mb-6">
             <h1 className="text-2xl font-bold text-white">Profile</h1>
             {!editMode && (
@@ -164,7 +170,7 @@ const Profile = ({ userId }) => {
       )}
 
       {/* Main Content */}
-      <div className={`px-4 ${userId ? 'mt-4' : '-mt-16'} space-y-4`}>
+      <div className={`px-4 ${userId ? 'mt-4' : 'mt-6'} space-y-4`}>
         {/* Error Message */}
         {error && (
           <div className="bg-red-50 border border-red-200 rounded-xl p-3 text-sm text-red-900">
@@ -361,8 +367,8 @@ const Profile = ({ userId }) => {
           )}
         </div>
 
-        {/* Measurements Section - Hide for Trainer View for now as we don't have endpoints */}
-        {!userId && (
+        {/* Measurements Section - Hide for Trainer View or if the user is a trainer */}
+        {!userId && user?.role !== 'trainer' && (
           <div className="bg-white rounded-2xl shadow-lg p-5 border border-gray-100">
             <div className="flex justify-between items-center mb-4">
               <h3 className="font-bold text-gray-900">Body Tracking</h3>
