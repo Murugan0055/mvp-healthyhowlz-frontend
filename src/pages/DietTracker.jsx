@@ -107,7 +107,11 @@ const DietTracker = ({ userId: propUserId }) => {
       }, 300);
     } catch (error) {
       console.error('Error analyzing meal:', error);
-      setAnalysisError('Could not analyze image. Please enter details manually or try again.');
+      if (error.response?.status === 429) {
+        setAnalysisError(error.response.data.message || 'Daily AI analysis limit reached (7 requests). Please try again tomorrow.');
+      } else {
+        setAnalysisError('Could not analyze image. Please enter details manually or try again.');
+      }
     } finally {
       setAnalyzing(false);
     }

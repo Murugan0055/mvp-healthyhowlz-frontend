@@ -104,7 +104,11 @@ const TrainerWorkoutPlanBuilder = () => {
         });
       } catch (err) {
         console.error('Extraction failed:', err);
-        setError('Failed to extract data from image.');
+        if (err.response?.status === 429) {
+          setError(err.response.data.message || 'Daily AI extraction limit reached (7 requests). Please try again tomorrow.');
+        } else {
+          setError('Failed to extract data from image.');
+        }
       } finally {
         setAnalyzing(false);
       }
